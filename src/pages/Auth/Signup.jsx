@@ -1,16 +1,19 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff, Upload } from "lucide-react";
+import { registerUser, reset } from "@/redux/slices/authSlice";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const dispatch = useDispatch();
+  const { user, isLoading, isAuthenticated } = useSelector((state) => state.auth);
+  
   const [formData, setFormData] = useState({
     email: "",
     username: "",
@@ -20,10 +23,20 @@ const Signup = () => {
     last_name: "",
     profile_picture: null,
   });
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+
+  // Redirect if authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      navigate(`/${user.role.toLowerCase()}/dashboard`, { replace: true });
+    }
+    
+    return () => {
+      dispatch(reset());
+    };
+  }, [isAuthenticated, user, navigate, dispatch]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -46,42 +59,25 @@ const Signup = () => {
 
   const validateForm = () => {
     if (formData.password !== formData.confirm_password) {
-      toast({
-        title: "Password mismatch",
-        description: "Password and confirm password do not match",
-        variant: "destructive",
-      });
-      return false;
+      return { valid: false, message: "Password and confirm password do not match" };
     }
     
     if (formData.password.length < 6) {
-      toast({
-        title: "Password too short",
-        description: "Password must be at least 6 characters long",
-        variant: "destructive",
-      });
-      return false;
+      return { valid: false, message: "Password must be at least 6 characters long" };
     }
     
-    return true;
+    return { valid: true };
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    const validation = validateForm();
+    if (!validation.valid) {
+      return;
+    }
     
-    setLoading(true);
-    
-    // Mock API call (replace with actual API call later)
-    setTimeout(() => {
-      setLoading(false);
-      toast({
-        title: "Account created successfully",
-        description: "You can now login with your credentials",
-      });
-      navigate("/login");
-    }, 1500);
+    dispatch(registerUser(formData));
   };
 
   return (
@@ -224,8 +220,8 @@ const Signup = () => {
                   </div>
                 </div>
                 
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Creating Account..." : "Create Account"}
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Creating Account..." : "Create Account"}
                 </Button>
               </div>
             </form>

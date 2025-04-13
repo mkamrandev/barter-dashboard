@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import {
   Bell,
   Menu,
@@ -19,21 +20,24 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useToast } from "@/hooks/use-toast";
+import { logoutUser } from "@/redux/slices/authSlice";
 
 const Header = ({ toggleSidebar, sidebarOpen, userRole }) => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const dispatch = useDispatch();
+  const { user } = useSelector(state => state.auth);
   const [unreadNotifications, setUnreadNotifications] = useState(3);
 
   const handleLogout = () => {
-    localStorage.removeItem("userRole");
-    toast({
-      title: "Logged out successfully",
-      description: "You have been logged out of your account.",
-    });
+    dispatch(logoutUser());
     navigate("/login");
   };
+
+  // Get user details from Redux store
+  const userEmail = user?.email || `${userRole.toLowerCase()}@demo.com`;
+  const userName = user ? `${user.first_name} ${user.last_name}` : userRole;
+  const avatarUrl = user?.profile_picture || 
+                    `https://ui-avatars.com/api/?name=${userRole}&background=random`;
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
@@ -83,13 +87,13 @@ const Header = ({ toggleSidebar, sidebarOpen, userRole }) => {
               >
                 <Avatar className="h-8 w-8">
                   <AvatarImage
-                    src={`https://ui-avatars.com/api/?name=${userRole}&background=random`}
-                    alt={userRole}
+                    src={avatarUrl}
+                    alt={userName}
                   />
-                  <AvatarFallback>{userRole.charAt(0)}</AvatarFallback>
+                  <AvatarFallback>{userName.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div className="flex flex-col items-start">
-                  <span className="text-sm font-medium">{userRole}</span>
+                  <span className="text-sm font-medium">{userName}</span>
                 </div>
                 <ChevronDown className="h-4 w-4 text-gray-500" />
               </Button>
@@ -97,8 +101,8 @@ const Header = ({ toggleSidebar, sidebarOpen, userRole }) => {
             <DropdownMenuContent align="end" className="w-56">
               <div className="flex items-center justify-start gap-2 p-2">
                 <div className="flex flex-col space-y-1 leading-none">
-                  <p className="font-medium">{userRole} Account</p>
-                  <p className="text-sm text-gray-500">{`${userRole.toLowerCase()}@demo.com`}</p>
+                  <p className="font-medium">{userName}</p>
+                  <p className="text-sm text-gray-500">{userEmail}</p>
                 </div>
               </div>
               <DropdownMenuSeparator />

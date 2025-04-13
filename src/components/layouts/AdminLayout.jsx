@@ -1,6 +1,7 @@
 
 import React, { useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
 import Sidebar from "../common/Sidebar";
 import Header from "../common/Header";
 import { adminMenuItems } from "../../data/menuItems";
@@ -9,22 +10,15 @@ import { toast } from "sonner";
 const AdminLayout = () => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { user } = useSelector(state => state.auth);
   
-  // Check if user is authenticated as admin (would be enhanced with actual auth)
-  const checkAuth = () => {
-    const userRole = localStorage.getItem("userRole");
-    if (!userRole || userRole !== "admin") {
-      toast.error("Unauthorized access. Please login first.");
-      navigate("/login");
-      return false;
-    }
-    return true;
-  };
-
-  // Effect to verify auth on component mount
+  // Check role on component mount
   React.useEffect(() => {
-    checkAuth();
-  }, []);
+    if (user && user.role !== "admin") {
+      toast.error("Unauthorized access. Redirecting to appropriate dashboard.");
+      navigate(`/${user.role.toLowerCase()}/dashboard`);
+    }
+  }, [user, navigate]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);

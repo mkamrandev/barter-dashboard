@@ -1,22 +1,38 @@
 
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
+import { loginUser, reset } from "@/redux/slices/authSlice";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const location = useLocation();
+  const dispatch = useDispatch();
+  const { user, isLoading, isAuthenticated, error } = useSelector((state) => state.auth);
+  
   const [formData, setFormData] = useState({
     login: "",
     password: "",
   });
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const from = location.state?.from || `/${user.role.toLowerCase()}/dashboard`;
+      navigate(from, { replace: true });
+    }
+    
+    return () => {
+      // Reset the auth state when component unmounts
+      dispatch(reset());
+    };
+  }, [isAuthenticated, user, navigate, location, dispatch]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,42 +41,7 @@ const Login = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    setLoading(true);
-    
-    // Mock login authentication (replace with actual API call later)
-    setTimeout(() => {
-      setLoading(false);
-      
-      // Demo login credentials for testing
-      if (formData.login === "admin@demo.com" && formData.password === "password") {
-        toast({
-          title: "Login successful",
-          description: "Welcome back, Admin!",
-        });
-        localStorage.setItem("userRole", "admin");
-        navigate("/admin/dashboard");
-      } else if (formData.login === "subadmin@demo.com" && formData.password === "password") {
-        toast({
-          title: "Login successful",
-          description: "Welcome back, Subadmin!",
-        });
-        localStorage.setItem("userRole", "subadmin");
-        navigate("/subadmin/dashboard");
-      } else if (formData.login === "user@demo.com" && formData.password === "password") {
-        toast({
-          title: "Login successful",
-          description: "Welcome back, User!",
-        });
-        localStorage.setItem("userRole", "user");
-        navigate("/user/dashboard");
-      } else {
-        toast({
-          title: "Login failed",
-          description: "Invalid credentials. Please try again.",
-          variant: "destructive",
-        });
-      }
-    }, 1000);
+    dispatch(loginUser(formData));
   };
 
   return (
@@ -119,8 +100,8 @@ const Login = () => {
                     </button>
                   </div>
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Signing in..." : "Sign In"}
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Signing in..." : "Sign In"}
                 </Button>
               </div>
             </form>
