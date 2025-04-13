@@ -3,12 +3,16 @@ import { configureStore } from '@reduxjs/toolkit';
 import authReducer from './slices/authSlice';
 import userReducer from './slices/userSlice';
 import subadminReducer from './slices/subadminSlice';
+import categoryReducer from './slices/categorySlice';
+import itemReducer from './slices/itemSlice';
 
 export const store = configureStore({
   reducer: {
     auth: authReducer,
     users: userReducer,
     subadmins: subadminReducer,
+    categories: categoryReducer,
+    items: itemReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

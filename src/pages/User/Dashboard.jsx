@@ -1,33 +1,37 @@
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useDispatch, useSelector } from 'react-redux';
+import { getItems, filterUserItems } from '@/redux/slices/itemSlice';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingBag, BarChart3, FileText, Plus, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
+import ItemCard from "@/components/items/ItemCard";
 
 const UserDashboard = () => {
-  // Mock data for user items
-  const userItems = [
-    {
-      id: 1,
-      name: "Vintage Camera",
-      category: "Electronics",
-      status: "active",
-      dateAdded: "2023-03-15",
-    },
-    {
-      id: 2,
-      name: "Antique Table",
-      category: "Furniture",
-      status: "pending",
-      dateAdded: "2023-03-10",
-    },
-  ];
-
+  const dispatch = useDispatch();
+  const { user } = useSelector((state) => state.auth);
+  const { items, userItems } = useSelector((state) => state.items);
+  
   // Mock data for user verification
   const verificationStatus = "pending"; // could be 'pending', 'verified', 'rejected'
+  
+  useEffect(() => {
+    dispatch(getItems());
+  }, [dispatch]);
+  
+  useEffect(() => {
+    if (user) {
+      dispatch(filterUserItems(user.id));
+    }
+  }, [dispatch, user, items]);
+  
+  // Get only 3 recent items for the dashboard display
+  const recentItems = [...userItems].sort((a, b) => {
+    return new Date(b.created_at) - new Date(a.created_at);
+  }).slice(0, 3);
 
   return (
     <div className="space-y-6">
@@ -47,7 +51,7 @@ const UserDashboard = () => {
           <CardContent>
             <div className="text-2xl font-bold">{userItems.length}</div>
             <p className="text-xs text-muted-foreground">
-              {userItems.filter(item => item.status === "active").length} active items
+              {userItems.filter(item => item.status === "available").length} active items
             </p>
           </CardContent>
         </Card>
@@ -125,46 +129,26 @@ const UserDashboard = () => {
         </TabsList>
         <TabsContent value="items" className="space-y-4">
           <Card>
-            <CardHeader>
-              <CardTitle>My Items</CardTitle>
-              <CardDescription>
-                Items you've added for barter.
-              </CardDescription>
+            <CardHeader className="flex justify-between items-center">
+              <div>
+                <CardTitle>Recent Items</CardTitle>
+                <CardDescription>
+                  Your recently added items for barter.
+                </CardDescription>
+              </div>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/user/items">View All Items</Link>
+              </Button>
             </CardHeader>
             <CardContent>
-              {userItems.length > 0 ? (
-                <div className="space-y-4">
-                  {userItems.map((item) => (
-                    <div key={item.id} className="flex items-center">
-                      <div className="w-12 h-12 rounded-md bg-gray-100 mr-3 flex items-center justify-center">
-                        <ShoppingBag className="h-6 w-6 text-gray-500" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="text-sm font-medium">{item.name}</p>
-                            <p className="text-xs text-gray-500">{item.category}</p>
-                          </div>
-                          <div className="flex items-center">
-                            <Badge
-                              variant="outline"
-                              className={
-                                item.status === "active"
-                                  ? "text-green-500 border-green-500"
-                                  : "text-amber-500 border-amber-500"
-                              }
-                            >
-                              {item.status}
-                            </Badge>
-                            <Button variant="ghost" size="icon" asChild>
-                              <Link to={`/user/items/${item.id}`}>
-                                <ArrowRight className="h-4 w-4" />
-                              </Link>
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+              {recentItems.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {recentItems.map((item) => (
+                    <ItemCard 
+                      key={item.id} 
+                      item={item}
+                      onView={() => {}} // Dashboard view doesn't need detailed view
+                    />
                   ))}
                 </div>
               ) : (
