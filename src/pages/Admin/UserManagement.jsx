@@ -1,7 +1,8 @@
 
-import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -22,45 +23,97 @@ import { Label } from "@/components/ui/label";
 import DataTable from "../../components/common/DataTable";
 import UserCard from "../../components/common/UserCard";
 import { useToast } from "@/hooks/use-toast";
-import { usersData } from "../../data/mockData";
-import { Filter, Plus, MoreHorizontal, UserCheck, UserX, Trash, PencilLine } from "lucide-react";
+import { Filter, Plus, MoreHorizontal, UserCheck, UserX, Trash, PencilLine, Loader2 } from "lucide-react";
+import {
+  getAllUsers,
+  getInactiveUsers,
+  updateUser,
+  deleteUser,
+  permanentlyDeleteUser,
+  restoreUser,
+} from "../../redux/slices/userSlice";
 
 const UserManagement = () => {
+  const dispatch = useDispatch();
   const { toast } = useToast();
   const [viewMode, setViewMode] = useState("grid");
   const [editUser, setEditUser] = useState(null);
+  const [editUserForm, setEditUserForm] = useState({
+    name: "",
+    email: "",
+  });
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("active");
 
-  const filteredUsers = usersData.filter(
-    (user) => (activeTab === "active" && user.status === "active") || 
-             (activeTab === "inactive" && user.status === "inactive")
-  );
+  const { users, inactiveUsers, isLoading } = useSelector((state) => state.users);
+
+  // Fetch users on component mount
+  useEffect(() => {
+    if (activeTab === "active") {
+      dispatch(getAllUsers());
+    } else {
+      dispatch(getInactiveUsers());
+    }
+  }, [dispatch, activeTab]);
+
+  // Update tab content when switching tabs
+  const handleTabChange = (value) => {
+    setActiveTab(value);
+    if (value === "active") {
+      dispatch(getAllUsers());
+    } else {
+      dispatch(getInactiveUsers());
+    }
+  };
 
   const handleEdit = (user) => {
     setEditUser(user);
+    setEditUserForm({
+      name: user.name,
+      email: user.email,
+    });
     setIsEditDialogOpen(true);
   };
 
-  const handleDelete = (user) => {
-    toast({
-      title: "User Deleted",
-      description: `${user.name} has been deleted successfully.`,
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditUserForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSaveEdit = () => {
+    dispatch(updateUser({
+      id: editUser.id,
+      ...editUserForm
+    })).then(() => {
+      setIsEditDialogOpen(false);
     });
+  };
+
+  const handleDelete = (user) => {
+    if (window.confirm(`Are you sure you want to delete ${user.name}?`)) {
+      dispatch(deleteUser(user.id));
+    }
+  };
+
+  const handlePermanentDelete = (user) => {
+    if (window.confirm(`Are you sure you want to PERMANENTLY delete ${user.name}? This action cannot be undone.`)) {
+      dispatch(permanentlyDeleteUser(user.id));
+    }
   };
 
   const handleActivate = (user) => {
-    toast({
-      title: "User Activated",
-      description: `${user.name} has been activated successfully.`,
-    });
+    if (window.confirm(`Are you sure you want to restore ${user.name}?`)) {
+      dispatch(restoreUser(user.id));
+    }
   };
 
   const handleDeactivate = (user) => {
-    toast({
-      title: "User Deactivated",
-      description: `${user.name} has been deactivated successfully.`,
-    });
+    if (window.confirm(`Are you sure you want to deactivate ${user.name}?`)) {
+      dispatch(deleteUser(user.id));
+    }
   };
 
   const columns = [
@@ -107,30 +160,35 @@ const UserManagement = () => {
                 <PencilLine className="mr-2 h-4 w-4" />
                 Edit
               </DropdownMenuItem>
-              {user.status === "active" ? (
+              {activeTab === "active" ? (
                 <DropdownMenuItem onClick={() => handleDeactivate(user)}>
                   <UserX className="mr-2 h-4 w-4" />
                   Deactivate
                 </DropdownMenuItem>
               ) : (
-                <DropdownMenuItem onClick={() => handleActivate(user)}>
-                  <UserCheck className="mr-2 h-4 w-4" />
-                  Activate
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem onClick={() => handleActivate(user)}>
+                    <UserCheck className="mr-2 h-4 w-4" />
+                    Restore
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="text-red-500 focus:text-red-500"
+                    onClick={() => handlePermanentDelete(user)}
+                  >
+                    <Trash className="mr-2 h-4 w-4" />
+                    Permanently Delete
+                  </DropdownMenuItem>
+                </>
               )}
-              <DropdownMenuItem 
-                className="text-red-500 focus:text-red-500"
-                onClick={() => handleDelete(user)}
-              >
-                <Trash className="mr-2 h-4 w-4" />
-                Delete
-              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         );
       },
     },
   ];
+
+  // Get the right data based on active tab
+  const displayedUsers = activeTab === "active" ? users : inactiveUsers;
 
   return (
     <div className="space-y-6">
@@ -143,7 +201,7 @@ const UserManagement = () => {
         <Tabs
           defaultValue="active"
           value={activeTab}
-          onValueChange={setActiveTab}
+          onValueChange={handleTabChange}
           className="w-full sm:w-auto"
         >
           <TabsList>
@@ -176,33 +234,40 @@ const UserManagement = () => {
         </div>
       </div>
 
-      <div>
-        {viewMode === "grid" ? (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredUsers.map((user) => (
-              <UserCard
-                key={user.id}
-                user={user}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onActivate={handleActivate}
-                onDeactivate={handleDeactivate}
-              />
-            ))}
-            {filteredUsers.length === 0 && (
-              <div className="col-span-full text-center py-8">
-                <p className="text-gray-500">No users found.</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="p-6">
-              <DataTable columns={columns} data={filteredUsers} />
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <div>
+          {viewMode === "grid" ? (
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {displayedUsers && displayedUsers.length > 0 ? (
+                displayedUsers.map((user) => (
+                  <UserCard
+                    key={user.id}
+                    user={user}
+                    onEdit={handleEdit}
+                    onDelete={activeTab === "active" ? handleDelete : handlePermanentDelete}
+                    onActivate={handleActivate}
+                    onDeactivate={handleDeactivate}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full text-center py-8">
+                  <p className="text-gray-500">No users found.</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-6">
+                <DataTable columns={columns} data={displayedUsers || []} />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-md">
@@ -218,14 +283,18 @@ const UserManagement = () => {
                 <Label htmlFor="name">Name</Label>
                 <Input
                   id="name"
-                  defaultValue={editUser.name}
+                  name="name"
+                  value={editUserForm.name}
+                  onChange={handleEditChange}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
-                  defaultValue={editUser.email}
+                  name="email"
+                  value={editUserForm.email}
+                  onChange={handleEditChange}
                   type="email"
                 />
               </div>
@@ -233,7 +302,7 @@ const UserManagement = () => {
                 <Label htmlFor="role">Role</Label>
                 <Input
                   id="role"
-                  defaultValue={editUser.role}
+                  value={editUser.role}
                   disabled
                 />
               </div>
@@ -243,19 +312,22 @@ const UserManagement = () => {
             <Button 
               variant="outline" 
               onClick={() => setIsEditDialogOpen(false)}
+              disabled={isLoading}
             >
               Cancel
             </Button>
             <Button
-              onClick={() => {
-                toast({
-                  title: "User Updated",
-                  description: "User information has been updated successfully.",
-                });
-                setIsEditDialogOpen(false);
-              }}
+              onClick={handleSaveEdit}
+              disabled={isLoading}
             >
-              Save Changes
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save Changes'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

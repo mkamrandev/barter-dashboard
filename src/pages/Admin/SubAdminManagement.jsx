@@ -1,7 +1,8 @@
 
-import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -18,10 +19,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import DataTable from "../../components/common/DataTable";
 import UserCard from "../../components/common/UserCard";
 import { useToast } from "@/hooks/use-toast";
-import { subadminsData } from "../../data/mockData";
-import { Plus, Mail, Key } from "lucide-react";
+import { Plus, Mail, Key, Loader2 } from "lucide-react";
+import {
+  createSubadmin,
+  getAllSubadmins,
+  getInactiveSubadmins,
+  deleteSubadmin,
+  permanentlyDeleteSubadmin,
+  restoreSubadmin,
+} from "../../redux/slices/subadminSlice";
 
 const SubAdminManagement = () => {
+  const dispatch = useDispatch();
   const { toast } = useToast();
   const [viewMode, setViewMode] = useState("grid");
   const [activeTab, setActiveTab] = useState("active");
@@ -30,55 +39,105 @@ const SubAdminManagement = () => {
     firstName: "",
     lastName: "",
     email: "",
+    username: "",
+    password: "",
+    confirmPassword: "",
     permissions: "view_only",
   });
 
-  const filteredSubadmins = subadminsData.filter(
-    (subadmin) => (activeTab === "active" && subadmin.status === "active") || 
-                  (activeTab === "inactive" && subadmin.status === "inactive")
-  );
+  const { subadmins, inactiveSubadmins, isLoading } = useSelector((state) => state.subadmins);
+
+  // Fetch subadmins on component mount
+  useEffect(() => {
+    if (activeTab === "active") {
+      dispatch(getAllSubadmins());
+    } else {
+      dispatch(getInactiveSubadmins());
+    }
+  }, [dispatch, activeTab]);
+
+  // Update tab content when switching tabs
+  const handleTabChange = (value) => {
+    setActiveTab(value);
+    if (value === "active") {
+      dispatch(getAllSubadmins());
+    } else {
+      dispatch(getInactiveSubadmins());
+    }
+  };
 
   const handleEdit = (subadmin) => {
     toast({
       title: "Edit Subadmin",
       description: `Editing ${subadmin.name}'s information.`,
     });
+    // In a real app, you would open a modal and implement edit functionality
   };
 
   const handleDelete = (subadmin) => {
-    toast({
-      title: "Subadmin Deleted",
-      description: `${subadmin.name} has been deleted successfully.`,
-    });
+    if (window.confirm(`Are you sure you want to delete ${subadmin.name}?`)) {
+      dispatch(deleteSubadmin(subadmin.id));
+    }
+  };
+
+  const handlePermanentDelete = (subadmin) => {
+    if (window.confirm(`Are you sure you want to PERMANENTLY delete ${subadmin.name}? This action cannot be undone.`)) {
+      dispatch(permanentlyDeleteSubadmin(subadmin.id));
+    }
   };
 
   const handleActivate = (subadmin) => {
-    toast({
-      title: "Subadmin Activated",
-      description: `${subadmin.name} has been activated successfully.`,
-    });
+    if (window.confirm(`Are you sure you want to restore ${subadmin.name}?`)) {
+      dispatch(restoreSubadmin(subadmin.id));
+    }
   };
 
   const handleDeactivate = (subadmin) => {
-    toast({
-      title: "Subadmin Deactivated",
-      description: `${subadmin.name} has been deactivated successfully.`,
-    });
+    if (window.confirm(`Are you sure you want to deactivate ${subadmin.name}?`)) {
+      dispatch(deleteSubadmin(subadmin.id));
+    }
   };
 
   const handleAddSubadmin = () => {
-    const fullName = `${newSubadminData.firstName} ${newSubadminData.lastName}`;
-    toast({
-      title: "Subadmin Added",
-      description: `${fullName} has been added as a subadmin.`,
-    });
-    setIsAddDialogOpen(false);
-    setNewSubadminData({
-      firstName: "",
-      lastName: "",
-      email: "",
-      permissions: "view_only",
-    });
+    // Basic validation
+    if (!newSubadminData.firstName || !newSubadminData.lastName || !newSubadminData.email || 
+        !newSubadminData.username || !newSubadminData.password || !newSubadminData.confirmPassword) {
+      toast.error("Please fill all required fields");
+      return;
+    }
+
+    if (newSubadminData.password !== newSubadminData.confirmPassword) {
+      toast.error("Passwords don't match");
+      return;
+    }
+
+    const subadminToAdd = {
+      first_name: newSubadminData.firstName,
+      last_name: newSubadminData.lastName,
+      email: newSubadminData.email,
+      username: newSubadminData.username,
+      password: newSubadminData.password,
+      password_confirmation: newSubadminData.confirmPassword,
+      permissions: newSubadminData.permissions,
+    };
+
+    dispatch(createSubadmin(subadminToAdd))
+      .unwrap()
+      .then(() => {
+        setIsAddDialogOpen(false);
+        setNewSubadminData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          username: "",
+          password: "",
+          confirmPassword: "",
+          permissions: "view_only",
+        });
+      })
+      .catch((error) => {
+        // Toast will be handled in the thunk
+      });
   };
 
   const handleInputChange = (e) => {
@@ -136,20 +195,28 @@ const SubAdminManagement = () => {
             <Button variant="outline" size="sm" onClick={() => handleEdit(subadmin)}>
               Edit
             </Button>
-            {subadmin.status === "active" ? (
+            {activeTab === "active" ? (
               <Button variant="outline" size="sm" onClick={() => handleDeactivate(subadmin)}>
                 Deactivate
               </Button>
             ) : (
-              <Button variant="outline" size="sm" onClick={() => handleActivate(subadmin)}>
-                Activate
-              </Button>
+              <>
+                <Button variant="outline" size="sm" onClick={() => handleActivate(subadmin)}>
+                  Restore
+                </Button>
+                <Button variant="outline" size="sm" className="text-red-500" onClick={() => handlePermanentDelete(subadmin)}>
+                  Delete
+                </Button>
+              </>
             )}
           </div>
         );
       },
     },
   ];
+
+  // Get the right data based on active tab
+  const displayedSubadmins = activeTab === "active" ? subadmins : inactiveSubadmins;
 
   return (
     <div className="space-y-6">
@@ -162,7 +229,7 @@ const SubAdminManagement = () => {
         <Tabs
           defaultValue="active"
           value={activeTab}
-          onValueChange={setActiveTab}
+          onValueChange={handleTabChange}
           className="w-full sm:w-auto"
         >
           <TabsList>
@@ -225,6 +292,16 @@ const SubAdminManagement = () => {
                   </div>
                 </div>
                 <div className="space-y-2">
+                  <Label htmlFor="username">Username</Label>
+                  <Input
+                    id="username"
+                    name="username"
+                    value={newSubadminData.username}
+                    onChange={handleInputChange}
+                    placeholder="johndoe"
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label htmlFor="email">Email</Label>
                   <div className="flex items-center">
                     <Mail className="w-4 h-4 mr-2 text-gray-500" />
@@ -259,59 +336,88 @@ const SubAdminManagement = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Temporary Password</Label>
+                  <Label htmlFor="password">Password</Label>
                   <div className="flex items-center">
                     <Key className="w-4 h-4 mr-2 text-gray-500" />
                     <Input
                       id="password"
-                      type="text"
-                      value="tempPassword123"
-                      readOnly
+                      name="password"
+                      type="password"
+                      value={newSubadminData.password}
+                      onChange={handleInputChange}
+                      placeholder="••••••••"
                     />
                   </div>
-                  <p className="text-xs text-gray-500">
-                    A temporary password will be generated and sent to the subadmin's email.
-                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <div className="flex items-center">
+                    <Key className="w-4 h-4 mr-2 text-gray-500" />
+                    <Input
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      type="password"
+                      value={newSubadminData.confirmPassword}
+                      onChange={handleInputChange}
+                      placeholder="••••••••"
+                    />
+                  </div>
                 </div>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleAddSubadmin}>Add Subadmin</Button>
+                <Button onClick={handleAddSubadmin} disabled={isLoading}>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    'Add Subadmin'
+                  )}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
-      <div>
-        {viewMode === "grid" ? (
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredSubadmins.map((subadmin) => (
-              <UserCard
-                key={subadmin.id}
-                user={subadmin}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onActivate={handleActivate}
-                onDeactivate={handleDeactivate}
-              />
-            ))}
-            {filteredSubadmins.length === 0 && (
-              <div className="col-span-full text-center py-8">
-                <p className="text-gray-500">No subadmins found.</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="p-6">
-              <DataTable columns={columns} data={filteredSubadmins} />
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      ) : (
+        <div>
+          {viewMode === "grid" ? (
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {displayedSubadmins && displayedSubadmins.length > 0 ? (
+                displayedSubadmins.map((subadmin) => (
+                  <UserCard
+                    key={subadmin.id}
+                    user={subadmin}
+                    onEdit={handleEdit}
+                    onDelete={activeTab === "active" ? handleDelete : handlePermanentDelete}
+                    onActivate={handleActivate}
+                    onDeactivate={handleDeactivate}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full text-center py-8">
+                  <p className="text-gray-500">No subadmins found.</p>
+                </div>
+              )}
+            </div>
+          ) : (
+            <Card>
+              <CardContent className="p-6">
+                <DataTable columns={columns} data={displayedSubadmins || []} />
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
     </div>
   );
 };

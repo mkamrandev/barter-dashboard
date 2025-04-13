@@ -22,18 +22,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { MoreVertical, Edit, Trash, UserCheck, UserX, Mail } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
 
 const UserCard = ({ user, onEdit, onDelete, onActivate, onDeactivate }) => {
-  const { toast } = useToast();
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
 
-  const handleAction = (action) => {
-    toast({
-      title: `${action} successful`,
-      description: `User has been ${action.toLowerCase()}d.`,
-    });
-  };
+  const isActive = user.status === "active";
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -53,7 +46,7 @@ const UserCard = ({ user, onEdit, onDelete, onActivate, onDeactivate }) => {
               <Edit className="mr-2 h-4 w-4" />
               <span>Edit</span>
             </DropdownMenuItem>
-            {user.status === "active" ? (
+            {isActive ? (
               <DropdownMenuItem onClick={() => onDeactivate(user)}>
                 <UserX className="mr-2 h-4 w-4" />
                 <span>Deactivate</span>
@@ -70,7 +63,7 @@ const UserCard = ({ user, onEdit, onDelete, onActivate, onDeactivate }) => {
               onClick={() => setShowDeleteDialog(true)}
             >
               <Trash className="mr-2 h-4 w-4" />
-              <span>Delete</span>
+              <span>{isActive ? "Delete" : "Permanently Delete"}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -89,12 +82,12 @@ const UserCard = ({ user, onEdit, onDelete, onActivate, onDeactivate }) => {
       <CardContent className="pt-0 pb-2 text-center">
         <div className="flex justify-center space-x-2 mb-2">
           <Badge
-            variant={user.status === "active" ? "default" : "secondary"}
+            variant={isActive ? "default" : "secondary"}
             className={
-              user.status === "active" ? "bg-green-500" : "bg-gray-500"
+              isActive ? "bg-green-500" : "bg-gray-500"
             }
           >
-            {user.status === "active" ? "Active" : "Inactive"}
+            {isActive ? "Active" : "Inactive"}
           </Badge>
           <Badge variant="outline">{user.role}</Badge>
         </div>
@@ -104,13 +97,26 @@ const UserCard = ({ user, onEdit, onDelete, onActivate, onDeactivate }) => {
         </div>
       </CardContent>
       <CardFooter className="flex justify-center space-x-2 pt-0">
-        <Button variant="outline" size="sm" onClick={() => handleAction("Email")}>
-          <Mail className="h-4 w-4 mr-1" />
-          Contact
-        </Button>
         <Button variant="outline" size="sm" onClick={() => onEdit(user)}>
           <Edit className="h-4 w-4 mr-1" />
           Edit
+        </Button>
+        <Button 
+          variant={isActive ? "outline" : "default"} 
+          size="sm"
+          onClick={() => isActive ? onDeactivate(user) : onActivate(user)}
+        >
+          {isActive ? (
+            <>
+              <UserX className="h-4 w-4 mr-1" />
+              Deactivate
+            </>
+          ) : (
+            <>
+              <UserCheck className="h-4 w-4 mr-1" />
+              Activate
+            </>
+          )}
         </Button>
       </CardFooter>
 
@@ -119,8 +125,9 @@ const UserCard = ({ user, onEdit, onDelete, onActivate, onDeactivate }) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the user
-              account and remove their data from our servers.
+              {isActive 
+                ? "This will deactivate the user account. You can restore it later." 
+                : "This action cannot be undone. This will permanently delete the user account and remove their data from our servers."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -132,7 +139,7 @@ const UserCard = ({ user, onEdit, onDelete, onActivate, onDeactivate }) => {
                 setShowDeleteDialog(false);
               }}
             >
-              Delete
+              {isActive ? "Delete" : "Permanently Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
