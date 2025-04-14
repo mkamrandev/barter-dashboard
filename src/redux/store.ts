@@ -5,6 +5,7 @@ import userReducer from './slices/userSlice';
 import subadminReducer from './slices/subadminSlice';
 import categoryReducer from './slices/categorySlice';
 import itemReducer from './slices/itemSlice';
+import verificationReducer from './slices/verificationSlice';
 
 export const store = configureStore({
   reducer: {
@@ -13,6 +14,7 @@ export const store = configureStore({
     subadmins: subadminReducer,
     categories: categoryReducer,
     items: itemReducer,
+    verification: verificationReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

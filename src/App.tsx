@@ -24,6 +24,7 @@ import UserManagement from "./pages/Admin/UserManagement";
 import SubAdminManagement from "./pages/Admin/SubAdminManagement";
 import CategoryManagement from "./pages/Admin/CategoryManagement";
 import ItemManagement from "./pages/Admin/ItemManagement";
+import VerificationManagement from "./pages/Admin/VerificationManagement";
 
 // Subadmin Pages
 import SubAdminDashboard from "./pages/SubAdmin/Dashboard";
@@ -70,6 +71,7 @@ const App = () => (
               <Route path="subadmins" element={<SubAdminManagement />} />
               <Route path="categories" element={<CategoryManagement />} />
               <Route path="items" element={<ItemManagement />} />
+              <Route path="verifications" element={<VerificationManagement />} />
               <Route index element={<Navigate to="dashboard" replace />} />
             </Route>
             
@@ -85,6 +87,7 @@ const App = () => (
               }
             >
               <Route path="dashboard" element={<SubAdminDashboard />} />
+              <Route path="verifications" element={<VerificationManagement />} />
               <Route index element={<Navigate to="dashboard" replace />} />
             </Route>
             
