@@ -5,12 +5,12 @@ import { toast } from 'sonner';
 
 // Get user from localStorage
 const user = JSON.parse(localStorage.getItem('user'));
-const token = localStorage.getItem('token');
+const accessToken = localStorage.getItem('access_token');
 
 const initialState = {
   user: user || null,
-  token: token || null,
-  isAuthenticated: !!token,
+  accessToken: accessToken || null,
+  isAuthenticated: !!accessToken,
   isLoading: false,
   error: null,
 };
@@ -110,14 +110,14 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         state.user = action.payload.user;
-        state.token = action.payload.token;
+        state.accessToken = action.payload.access_token;
         state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
-        state.token = null;
+        state.accessToken = null;
         state.error = action.payload;
       })
       // Login cases
@@ -129,14 +129,14 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = true;
         state.user = action.payload.user;
-        state.token = action.payload.token;
+        state.accessToken = action.payload.access_token;
         state.error = null;
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
-        state.token = null;
+        state.accessToken = null;
         state.error = action.payload;
       })
       // Logout cases
@@ -147,13 +147,13 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
-        state.token = null;
+        state.accessToken = null;
       })
       .addCase(logoutUser.rejected, (state) => {
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
-        state.token = null;
+        state.accessToken = null;
       })
       // Load user cases
       .addCase(loadUserFromToken.pending, (state) => {
@@ -168,7 +168,7 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.isAuthenticated = false;
         state.user = null;
-        state.token = null;
+        state.accessToken = null;
       });
   },
 });

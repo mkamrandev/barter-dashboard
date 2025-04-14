@@ -12,9 +12,9 @@ const api = axios.create({
 // Request interceptor to add auth token to all requests
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+    const accessToken = localStorage.getItem('access_token');
+    if (accessToken) {
+      config.headers['Authorization'] = `Bearer ${accessToken}`;
     }
     return config;
   },
@@ -37,16 +37,16 @@ api.interceptors.response.use(
 );
 
 // Save user data and token to localStorage
-const saveUserData = (userData, token) => {
+const saveUserData = (userData, accessToken) => {
   localStorage.setItem('user', JSON.stringify(userData));
-  localStorage.setItem('token', token);
+  localStorage.setItem('access_token', accessToken);
   localStorage.setItem('userRole', userData.role);
 };
 
 // Clear user data from localStorage
 const clearLocalStorage = () => {
   localStorage.removeItem('user');
-  localStorage.removeItem('token');
+  localStorage.removeItem('access_token');
   localStorage.removeItem('userRole');
 };
 
@@ -69,8 +69,8 @@ const register = async (userData) => {
     },
   });
   
-  if (response.data && response.data.token) {
-    saveUserData(response.data.user, response.data.token);
+  if (response.data && response.data.access_token) {
+    saveUserData(response.data.user, response.data.access_token);
   }
   
   return response.data;
@@ -80,8 +80,8 @@ const register = async (userData) => {
 const login = async (userData) => {
   const response = await api.post('/auth/login', userData);
   
-  if (response.data && response.data.token) {
-    saveUserData(response.data.user, response.data.token);
+  if (response.data && response.data.access_token) {
+    saveUserData(response.data.user, response.data.access_token);
   }
   
   return response.data;

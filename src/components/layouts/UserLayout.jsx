@@ -13,9 +13,19 @@ const UserLayout = () => {
   // Check role on component mount
   useEffect(() => {
     if (user && user.role !== "user") {
-      toast.error("Unauthorized access. Redirecting to appropriate dashboard.");
+      // Only show toast once
+      const hasShownToast = sessionStorage.getItem('role_redirect_toast');
+      if (!hasShownToast) {
+        toast.error("Unauthorized access. Redirecting to appropriate dashboard.");
+        sessionStorage.setItem('role_redirect_toast', 'true');
+      }
       navigate(`/${user.role.toLowerCase()}/dashboard`);
     }
+    
+    // Clear the toast flag when component unmounts
+    return () => {
+      sessionStorage.removeItem('role_redirect_toast');
+    };
   }, [user, navigate]);
 
   return <BaseLayout menuItems={userMenuItems} role="User" />;

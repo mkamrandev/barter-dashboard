@@ -10,12 +10,22 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const { user } = useSelector(state => state.auth);
   
-  // Check role on component mount
+  // Check role on component mount, but only if user is loaded
   useEffect(() => {
     if (user && user.role !== "admin") {
-      toast.error("Unauthorized access. Redirecting to appropriate dashboard.");
+      // Only show toast once
+      const hasShownToast = sessionStorage.getItem('role_redirect_toast');
+      if (!hasShownToast) {
+        toast.error("Unauthorized access. Redirecting to appropriate dashboard.");
+        sessionStorage.setItem('role_redirect_toast', 'true');
+      }
       navigate(`/${user.role.toLowerCase()}/dashboard`);
     }
+    
+    // Clear the toast flag when component unmounts
+    return () => {
+      sessionStorage.removeItem('role_redirect_toast');
+    };
   }, [user, navigate]);
 
   return <BaseLayout menuItems={adminMenuItems} role="Admin" />;

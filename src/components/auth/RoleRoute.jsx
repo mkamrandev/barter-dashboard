@@ -10,7 +10,10 @@ const RoleRoute = ({ children, allowedRoles }) => {
   // If user doesn't have the required role, redirect to their dashboard
   if (user && !allowedRoles.includes(user.role)) {
     const redirectPath = `/${user.role.toLowerCase()}/dashboard`;
-    toast.error(`Access denied. Redirecting to ${user.role} dashboard.`);
+    // Only show toast if we're not already on the user's dashboard path to avoid toast spam
+    if (!location.pathname.startsWith(`/${user.role.toLowerCase()}`)) {
+      toast.error(`Access denied. Redirecting to ${user.role} dashboard.`);
+    }
     return <Navigate to={redirectPath} replace state={{ from: location.pathname }} />;
   }
 
