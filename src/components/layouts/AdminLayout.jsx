@@ -1,50 +1,24 @@
 
-import React, { useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import Sidebar from "../common/Sidebar";
-import Header from "../common/Header";
 import { adminMenuItems } from "../../data/menuItems";
 import { toast } from "sonner";
+import BaseLayout from "./BaseLayout";
 
 const AdminLayout = () => {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const { user } = useSelector(state => state.auth);
   
   // Check role on component mount
-  React.useEffect(() => {
+  useEffect(() => {
     if (user && user.role !== "admin") {
       toast.error("Unauthorized access. Redirecting to appropriate dashboard.");
       navigate(`/${user.role.toLowerCase()}/dashboard`);
     }
   }, [user, navigate]);
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
-  return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar 
-        menuItems={adminMenuItems} 
-        isOpen={sidebarOpen} 
-        role="Admin"
-      />
-      
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header 
-          toggleSidebar={toggleSidebar}
-          sidebarOpen={sidebarOpen}
-          userRole="Admin"
-        />
-        
-        <main className="flex-1 overflow-y-auto p-4 bg-gray-50">
-          <Outlet />
-        </main>
-      </div>
-    </div>
-  );
+  return <BaseLayout menuItems={adminMenuItems} role="Admin" />;
 };
 
 export default AdminLayout;
