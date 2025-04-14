@@ -23,10 +23,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { MoreVertical, Edit, Trash, UserCheck, UserX, Mail } from "lucide-react";
 
-const UserCard = ({ user, onEdit, onDelete, onActivate, onDeactivate }) => {
+const UserCard = ({ user, onEdit, onDelete, onActivate, onDeactivate, isPermanentDelete = false }) => {
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
 
   const isActive = user.status === "active";
+  const getInitials = (name) => {
+    if (!name) return "U";
+    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+  };
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -63,18 +67,18 @@ const UserCard = ({ user, onEdit, onDelete, onActivate, onDeactivate }) => {
               onClick={() => setShowDeleteDialog(true)}
             >
               <Trash className="mr-2 h-4 w-4" />
-              <span>{isActive ? "Delete" : "Permanently Delete"}</span>
+              <span>{isPermanentDelete ? "Permanently Delete" : "Delete"}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
 
         <div className="flex flex-col items-center">
           <Avatar className="h-20 w-20 mb-2">
-            <AvatarImage src={user.avatar} alt={user.name} />
-            <AvatarFallback>{user.name?.charAt(0) || "U"}</AvatarFallback>
+            <AvatarImage src={user.profile_picture || user.avatar} alt={user.name || `${user.first_name} ${user.last_name}`} />
+            <AvatarFallback>{getInitials(user.name || `${user.first_name} ${user.last_name}`)}</AvatarFallback>
           </Avatar>
           <div className="text-center">
-            <h3 className="text-lg font-semibold">{user.name}</h3>
+            <h3 className="text-lg font-semibold">{user.name || `${user.first_name} ${user.last_name}`}</h3>
             <p className="text-sm text-gray-500">{user.email}</p>
           </div>
         </div>
@@ -90,10 +94,13 @@ const UserCard = ({ user, onEdit, onDelete, onActivate, onDeactivate }) => {
             {isActive ? "Active" : "Inactive"}
           </Badge>
           <Badge variant="outline">{user.role}</Badge>
+          {user.permissions && (
+            <Badge variant="outline" className="bg-blue-50">{user.permissions}</Badge>
+          )}
         </div>
         <div className="text-sm text-gray-500">
-          <p>Last login: {user.lastLogin || "Never"}</p>
-          <p>Joined: {user.joinDate || "Unknown"}</p>
+          <p>Last login: {user.last_login || "Never"}</p>
+          <p>Joined: {user.created_at || "Unknown"}</p>
         </div>
       </CardContent>
       <CardFooter className="flex justify-center space-x-2 pt-0">
@@ -125,9 +132,9 @@ const UserCard = ({ user, onEdit, onDelete, onActivate, onDeactivate }) => {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              {isActive 
-                ? "This will deactivate the user account. You can restore it later." 
-                : "This action cannot be undone. This will permanently delete the user account and remove their data from our servers."}
+              {isPermanentDelete 
+                ? "This action cannot be undone. This will permanently delete the account and remove the data from our servers." 
+                : "This will deactivate the account. You can restore it later."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -139,7 +146,7 @@ const UserCard = ({ user, onEdit, onDelete, onActivate, onDeactivate }) => {
                 setShowDeleteDialog(false);
               }}
             >
-              {isActive ? "Delete" : "Permanently Delete"}
+              {isPermanentDelete ? "Permanently Delete" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

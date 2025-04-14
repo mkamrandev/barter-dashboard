@@ -13,13 +13,26 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 import DataTable from "../../components/common/DataTable";
 import UserCard from "../../components/common/UserCard";
-import { useToast } from "@/hooks/use-toast";
-import { Plus, Mail, Key, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { Plus, Mail, Key, Loader2, Grid, List } from "lucide-react";
 import {
   createSubadmin,
   getAllSubadmins,
@@ -28,24 +41,27 @@ import {
   permanentlyDeleteSubadmin,
   restoreSubadmin,
 } from "../../redux/slices/subadminSlice";
+import { useForm } from "react-hook-form";
 
 const SubAdminManagement = () => {
   const dispatch = useDispatch();
-  const { toast } = useToast();
   const [viewMode, setViewMode] = useState("grid");
   const [activeTab, setActiveTab] = useState("active");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [newSubadminData, setNewSubadminData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    username: "",
-    password: "",
-    confirmPassword: "",
-    permissions: "view_only",
-  });
 
   const { subadmins, inactiveSubadmins, isLoading } = useSelector((state) => state.subadmins);
+
+  const form = useForm({
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      username: "",
+      password: "",
+      confirmPassword: "",
+      permissions: "view_only",
+    }
+  });
 
   // Fetch subadmins on component mount
   useEffect(() => {
@@ -69,90 +85,67 @@ const SubAdminManagement = () => {
   const handleEdit = (subadmin) => {
     toast({
       title: "Edit Subadmin",
-      description: `Editing ${subadmin.name}'s information.`,
+      description: `Editing ${subadmin.name || `${subadmin.first_name} ${subadmin.last_name}`}'s information.`,
     });
     // In a real app, you would open a modal and implement edit functionality
   };
 
   const handleDelete = (subadmin) => {
-    if (window.confirm(`Are you sure you want to delete ${subadmin.name}?`)) {
+    if (activeTab === "active") {
       dispatch(deleteSubadmin(subadmin.id));
-    }
-  };
-
-  const handlePermanentDelete = (subadmin) => {
-    if (window.confirm(`Are you sure you want to PERMANENTLY delete ${subadmin.name}? This action cannot be undone.`)) {
+    } else {
       dispatch(permanentlyDeleteSubadmin(subadmin.id));
     }
   };
 
   const handleActivate = (subadmin) => {
-    if (window.confirm(`Are you sure you want to restore ${subadmin.name}?`)) {
-      dispatch(restoreSubadmin(subadmin.id));
-    }
+    dispatch(restoreSubadmin(subadmin.id));
   };
 
   const handleDeactivate = (subadmin) => {
-    if (window.confirm(`Are you sure you want to deactivate ${subadmin.name}?`)) {
-      dispatch(deleteSubadmin(subadmin.id));
-    }
+    dispatch(deleteSubadmin(subadmin.id));
   };
 
-  const handleAddSubadmin = () => {
+  const handleAddSubadmin = (data) => {
     // Basic validation
-    if (!newSubadminData.firstName || !newSubadminData.lastName || !newSubadminData.email || 
-        !newSubadminData.username || !newSubadminData.password || !newSubadminData.confirmPassword) {
-      toast.error("Please fill all required fields");
-      return;
-    }
-
-    if (newSubadminData.password !== newSubadminData.confirmPassword) {
-      toast.error("Passwords don't match");
+    if (data.password !== data.confirmPassword) {
+      form.setError("confirmPassword", { 
+        type: "validate", 
+        message: "Passwords don't match" 
+      });
       return;
     }
 
     const subadminToAdd = {
-      first_name: newSubadminData.firstName,
-      last_name: newSubadminData.lastName,
-      email: newSubadminData.email,
-      username: newSubadminData.username,
-      password: newSubadminData.password,
-      password_confirmation: newSubadminData.confirmPassword,
-      permissions: newSubadminData.permissions,
+      first_name: data.firstName,
+      last_name: data.lastName,
+      email: data.email,
+      username: data.username,
+      password: data.password,
+      confirmPassword: data.confirmPassword,
+      permissions: data.permissions,
     };
 
     dispatch(createSubadmin(subadminToAdd))
       .unwrap()
       .then(() => {
         setIsAddDialogOpen(false);
-        setNewSubadminData({
-          firstName: "",
-          lastName: "",
-          email: "",
-          username: "",
-          password: "",
-          confirmPassword: "",
-          permissions: "view_only",
-        });
+        form.reset();
       })
-      .catch((error) => {
-        // Toast will be handled in the thunk
+      .catch(() => {
+        // Error will be handled by the thunk
       });
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewSubadminData(prev => ({
-      ...prev,
-      [name]: value
-    }));
   };
 
   const columns = [
     {
       accessorKey: "name",
       header: "Name",
-      cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+      cell: ({ row }) => {
+        const name = row.getValue("name") || 
+          `${row.original.first_name || ''} ${row.original.last_name || ''}`.trim();
+        return <div className="font-medium">{name || "Unknown"}</div>;
+      },
     },
     {
       accessorKey: "email",
@@ -168,8 +161,9 @@ const SubAdminManagement = () => {
       ),
     },
     {
-      accessorKey: "joinDate",
+      accessorKey: "created_at",
       header: "Join Date",
+      cell: ({ row }) => <div>{row.original.created_at ? new Date(row.original.created_at).toLocaleDateString() : "Unknown"}</div>,
     },
     {
       accessorKey: "status",
@@ -181,7 +175,7 @@ const SubAdminManagement = () => {
               row.getValue("status") === "active" ? "bg-green-500" : "bg-gray-500"
             }`}
           />
-          <span className="capitalize">{row.getValue("status")}</span>
+          <span className="capitalize">{row.getValue("status") || "Unknown"}</span>
         </div>
       ),
     },
@@ -204,7 +198,7 @@ const SubAdminManagement = () => {
                 <Button variant="outline" size="sm" onClick={() => handleActivate(subadmin)}>
                   Restore
                 </Button>
-                <Button variant="outline" size="sm" className="text-red-500" onClick={() => handlePermanentDelete(subadmin)}>
+                <Button variant="outline" size="sm" className="text-red-500" onClick={() => handleDelete(subadmin)}>
                   Delete
                 </Button>
               </>
@@ -244,6 +238,7 @@ const SubAdminManagement = () => {
             size="sm"
             onClick={() => setViewMode("grid")}
           >
+            <Grid className="h-4 w-4 mr-1" />
             Grid
           </Button>
           <Button
@@ -251,6 +246,7 @@ const SubAdminManagement = () => {
             size="sm"
             onClick={() => setViewMode("table")}
           >
+            <List className="h-4 w-4 mr-1" />
             Table
           </Button>
           
@@ -268,117 +264,140 @@ const SubAdminManagement = () => {
                   Create a new subadmin account with specific permissions.
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
+              <Form {...form} onSubmit={form.handleSubmit(handleAddSubadmin)}>
+                <div className="space-y-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
                       name="firstName"
-                      value={newSubadminData.firstName}
-                      onChange={handleInputChange}
-                      placeholder="John"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="John" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
+                    <FormField
+                      control={form.control}
                       name="lastName"
-                      value={newSubadminData.lastName}
-                      onChange={handleInputChange}
-                      placeholder="Doe"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Doe" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="username">Username</Label>
-                  <Input
-                    id="username"
+                  <FormField
+                    control={form.control}
                     name="username"
-                    value={newSubadminData.username}
-                    onChange={handleInputChange}
-                    placeholder="johndoe"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Username</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="johndoe" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center">
+                            <Mail className="w-4 h-4 mr-2 text-gray-500" />
+                            <Input {...field} type="email" placeholder="john.doe@example.com" />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="permissions"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Permissions</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select permissions" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="view_only">View Only</SelectItem>
+                            <SelectItem value="manage_users">Manage Users</SelectItem>
+                            <SelectItem value="manage_items">Manage Items</SelectItem>
+                            <SelectItem value="full_access">Full Access</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center">
+                            <Key className="w-4 h-4 mr-2 text-gray-500" />
+                            <Input {...field} type="password" placeholder="••••••••" />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Confirm Password</FormLabel>
+                        <FormControl>
+                          <div className="flex items-center">
+                            <Key className="w-4 h-4 mr-2 text-gray-500" />
+                            <Input {...field} type="password" placeholder="••••••••" />
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="flex items-center">
-                    <Mail className="w-4 h-4 mr-2 text-gray-500" />
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      value={newSubadminData.email}
-                      onChange={handleInputChange}
-                      placeholder="john.doe@example.com"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="permissions">Permissions</Label>
-                  <Select
-                    name="permissions"
-                    value={newSubadminData.permissions}
-                    onValueChange={(value) => 
-                      setNewSubadminData(prev => ({ ...prev, permissions: value }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select permissions" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="view_only">View Only</SelectItem>
-                      <SelectItem value="manage_users">Manage Users</SelectItem>
-                      <SelectItem value="manage_items">Manage Items</SelectItem>
-                      <SelectItem value="full_access">Full Access</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="flex items-center">
-                    <Key className="w-4 h-4 mr-2 text-gray-500" />
-                    <Input
-                      id="password"
-                      name="password"
-                      type="password"
-                      value={newSubadminData.password}
-                      onChange={handleInputChange}
-                      placeholder="••••••••"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
-                  <div className="flex items-center">
-                    <Key className="w-4 h-4 mr-2 text-gray-500" />
-                    <Input
-                      id="confirmPassword"
-                      name="confirmPassword"
-                      type="password"
-                      value={newSubadminData.confirmPassword}
-                      onChange={handleInputChange}
-                      placeholder="••••••••"
-                    />
-                  </div>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddSubadmin} disabled={isLoading}>
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Adding...
-                    </>
-                  ) : (
-                    'Add Subadmin'
-                  )}
-                </Button>
-              </DialogFooter>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)} type="button">
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Adding...
+                      </>
+                    ) : (
+                      'Add Subadmin'
+                    )}
+                  </Button>
+                </DialogFooter>
+              </Form>
             </DialogContent>
           </Dialog>
         </div>
@@ -398,9 +417,10 @@ const SubAdminManagement = () => {
                     key={subadmin.id}
                     user={subadmin}
                     onEdit={handleEdit}
-                    onDelete={activeTab === "active" ? handleDelete : handlePermanentDelete}
+                    onDelete={handleDelete}
                     onActivate={handleActivate}
                     onDeactivate={handleDeactivate}
+                    isPermanentDelete={activeTab === "inactive"}
                   />
                 ))
               ) : (

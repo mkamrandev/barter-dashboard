@@ -25,7 +25,14 @@ const getUserVerification = async (userId: string) => {
 
 // Handle verification (approve/reject)
 const handleVerification = async (id: string, action: 'approve' | 'reject') => {
-  const response = await api.post(`/handle-verification/${id}`, { action });
+  const formData = new FormData();
+  formData.append('action', action);
+  
+  const response = await api.post(`/handle-verification/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 };
 

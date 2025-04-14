@@ -8,7 +8,7 @@ import BaseLayout from "./BaseLayout";
 
 const UserLayout = () => {
   const navigate = useNavigate();
-  const { user } = useSelector(state => state.auth);
+  const { user, isLoading } = useSelector(state => state.auth);
   
   // Check role on component mount
   useEffect(() => {
@@ -27,6 +27,12 @@ const UserLayout = () => {
       sessionStorage.removeItem('role_redirect_toast');
     };
   }, [user, navigate]);
+
+  if (isLoading) {
+    return <div className="flex items-center justify-center h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+    </div>;
+  }
 
   return <BaseLayout menuItems={userMenuItems} role="User" />;
 };

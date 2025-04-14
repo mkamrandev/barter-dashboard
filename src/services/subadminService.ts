@@ -9,7 +9,10 @@ const createSubadmin = async (subadminData: any) => {
   Object.keys(subadminData).forEach((key) => {
     if (key === 'profile_picture' && subadminData[key] instanceof File) {
       formData.append(key, subadminData[key]);
-    } else {
+    } else if (key === 'password') {
+      formData.append('password', subadminData[key]);
+      formData.append('password_confirmation', subadminData.confirmPassword);
+    } else if (key !== 'confirmPassword') {
       formData.append(key, subadminData[key]);
     }
   });
@@ -49,7 +52,14 @@ const permanentlyDeleteSubadmin = async (id: string) => {
 
 // Restore subadmin
 const restoreSubadmin = async (id: string) => {
-  const response = await api.put(`/restore-subAdmin/${id}`);
+  const formData = new FormData();
+  formData.append('_method', 'put');
+  
+  const response = await api.post(`/restore-subAdmin/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 };
 

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -18,12 +18,19 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import DataTable from "../../components/common/DataTable";
 import UserCard from "../../components/common/UserCard";
-import { useToast } from "@/hooks/use-toast";
-import { Filter, Plus, MoreHorizontal, UserCheck, UserX, Trash, PencilLine, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { Filter, Plus, MoreHorizontal, UserCheck, UserX, Trash, PencilLine, Loader2, Grid, List } from "lucide-react";
 import {
   getAllUsers,
   getInactiveUsers,
@@ -32,20 +39,23 @@ import {
   permanentlyDeleteUser,
   restoreUser,
 } from "../../redux/slices/userSlice";
+import { useForm } from "react-hook-form";
 
 const UserManagement = () => {
   const dispatch = useDispatch();
-  const { toast } = useToast();
   const [viewMode, setViewMode] = useState("grid");
   const [editUser, setEditUser] = useState(null);
-  const [editUserForm, setEditUserForm] = useState({
-    name: "",
-    email: "",
-  });
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("active");
 
   const { users, inactiveUsers, isLoading } = useSelector((state) => state.users);
+
+  const form = useForm({
+    defaultValues: {
+      name: "",
+      email: "",
+    }
+  });
 
   // Fetch users on component mount
   useEffect(() => {
@@ -68,67 +78,53 @@ const UserManagement = () => {
 
   const handleEdit = (user) => {
     setEditUser(user);
-    setEditUserForm({
+    form.reset({
       name: user.name,
       email: user.email,
     });
     setIsEditDialogOpen(true);
   };
 
-  const handleEditChange = (e) => {
-    const { name, value } = e.target;
-    setEditUserForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSaveEdit = () => {
+  const handleSaveEdit = (data) => {
     dispatch(updateUser({
       id: editUser.id,
-      ...editUserForm
+      ...data
     })).then(() => {
       setIsEditDialogOpen(false);
+      form.reset();
     });
   };
 
   const handleDelete = (user) => {
-    if (window.confirm(`Are you sure you want to delete ${user.name}?`)) {
+    if (activeTab === "active") {
       dispatch(deleteUser(user.id));
-    }
-  };
-
-  const handlePermanentDelete = (user) => {
-    if (window.confirm(`Are you sure you want to PERMANENTLY delete ${user.name}? This action cannot be undone.`)) {
+    } else {
       dispatch(permanentlyDeleteUser(user.id));
     }
   };
 
   const handleActivate = (user) => {
-    if (window.confirm(`Are you sure you want to restore ${user.name}?`)) {
-      dispatch(restoreUser(user.id));
-    }
+    dispatch(restoreUser(user.id));
   };
 
   const handleDeactivate = (user) => {
-    if (window.confirm(`Are you sure you want to deactivate ${user.name}?`)) {
-      dispatch(deleteUser(user.id));
-    }
+    dispatch(deleteUser(user.id));
   };
 
   const columns = [
     {
       accessorKey: "name",
       header: "Name",
-      cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
+      cell: ({ row }) => <div className="font-medium">{row.getValue("name") || `${row.original.first_name} ${row.original.last_name}`}</div>,
     },
     {
       accessorKey: "email",
       header: "Email",
     },
     {
-      accessorKey: "joinDate",
+      accessorKey: "created_at",
       header: "Join Date",
+      cell: ({ row }) => <div>{new Date(row.original.created_at).toLocaleDateString()}</div>,
     },
     {
       accessorKey: "status",
@@ -173,7 +169,7 @@ const UserManagement = () => {
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     className="text-red-500 focus:text-red-500"
-                    onClick={() => handlePermanentDelete(user)}
+                    onClick={() => handleDelete(user)}
                   >
                     <Trash className="mr-2 h-4 w-4" />
                     Permanently Delete
@@ -216,6 +212,7 @@ const UserManagement = () => {
             size="sm"
             onClick={() => setViewMode("grid")}
           >
+            <Grid className="h-4 w-4 mr-1" />
             Grid
           </Button>
           <Button
@@ -223,6 +220,7 @@ const UserManagement = () => {
             size="sm"
             onClick={() => setViewMode("table")}
           >
+            <List className="h-4 w-4 mr-1" />
             Table
           </Button>
           <Button className="ml-auto" size="sm" asChild>
@@ -248,9 +246,10 @@ const UserManagement = () => {
                     key={user.id}
                     user={user}
                     onEdit={handleEdit}
-                    onDelete={activeTab === "active" ? handleDelete : handlePermanentDelete}
+                    onDelete={handleDelete}
                     onActivate={handleActivate}
                     onDeactivate={handleDeactivate}
+                    isPermanentDelete={activeTab === "inactive"}
                   />
                 ))
               ) : (
@@ -278,58 +277,67 @@ const UserManagement = () => {
             </DialogDescription>
           </DialogHeader>
           {editUser && (
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
+            <Form {...form} onSubmit={form.handleSubmit(handleSaveEdit)}>
+              <div className="space-y-4 py-2">
+                <FormField
+                  control={form.control}
                   name="name"
-                  value={editUserForm.name}
-                  onChange={handleEditChange}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
+                <FormField
+                  control={form.control}
                   name="email"
-                  value={editUserForm.email}
-                  onChange={handleEditChange}
-                  type="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input {...field} type="email" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
+                <div className="space-y-2">
+                  <FormLabel>Role</FormLabel>
+                  <Input
+                    value={editUser.role}
+                    disabled
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Input
-                  id="role"
-                  value={editUser.role}
-                  disabled
-                />
-              </div>
-            </div>
+              <DialogFooter className="mt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setIsEditDialogOpen(false)}
+                  type="button"
+                  disabled={isLoading}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    'Save Changes'
+                  )}
+                </Button>
+              </DialogFooter>
+            </Form>
           )}
-          <DialogFooter className="sm:justify-between">
-            <Button 
-              variant="outline" 
-              onClick={() => setIsEditDialogOpen(false)}
-              disabled={isLoading}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSaveEdit}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                'Save Changes'
-              )}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

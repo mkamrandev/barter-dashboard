@@ -25,6 +25,7 @@ const updateUser = async (userData: { id: string; [key: string]: any }) => {
   
   // Handle FormData for file upload if profile_picture exists
   const formData = new FormData();
+  formData.append('_method', 'put');
   
   Object.keys(data).forEach((key) => {
     if (key === 'profile_picture' && data[key] instanceof File) {
@@ -34,7 +35,7 @@ const updateUser = async (userData: { id: string; [key: string]: any }) => {
     }
   });
 
-  const response = await api.put(`/update/${id}`, formData, {
+  const response = await api.post(`/update/${id}`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -46,7 +47,18 @@ const updateUser = async (userData: { id: string; [key: string]: any }) => {
 // Update password
 const updatePassword = async (passwordData: { id: string; oldPassword: string; newPassword: string; confirmPassword: string }) => {
   const { id, ...data } = passwordData;
-  const response = await api.put(`/update-password/${id}`, data);
+  
+  const formData = new FormData();
+  formData.append('_method', 'put');
+  formData.append('old_password', data.oldPassword);
+  formData.append('new_password', data.newPassword);
+  formData.append('confirm_new_password', data.confirmPassword);
+  
+  const response = await api.post(`/update-password/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 };
 
@@ -64,7 +76,14 @@ const permanentlyDeleteUser = async (id: string) => {
 
 // Restore user
 const restoreUser = async (id: string) => {
-  const response = await api.put(`/restore-user/${id}`);
+  const formData = new FormData();
+  formData.append('_method', 'put');
+  
+  const response = await api.post(`/restore-user/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 };
 
