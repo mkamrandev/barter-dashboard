@@ -1,17 +1,12 @@
 
 import React from "react";
 import VerificationList from "@/components/verification/VerificationList";
+import VerificationManagementHeader from "@/components/verification/VerificationManagementHeader";
 
 const VerificationManagement = () => {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Verification Management</h1>
-        <p className="text-gray-500">
-          Review and manage user verification requests.
-        </p>
-      </div>
-
+      <VerificationManagementHeader />
       <VerificationList />
     </div>
   );
