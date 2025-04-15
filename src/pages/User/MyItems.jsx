@@ -29,6 +29,7 @@ const MyItems = () => {
   const [availableItems, setAvailableItems] = useState([]);
   const [pendingItems, setPendingItems] = useState([]);
   
+  // Load items and categories once on component mount
   useEffect(() => {
     dispatch(getItems());
     dispatch(getCategories());
@@ -39,14 +40,15 @@ const MyItems = () => {
     };
   }, [dispatch]);
   
+  // Filter user's items when user or items change
   useEffect(() => {
     if (user) {
       dispatch(filterUserItems(user.id));
     }
-  }, [dispatch, user]);
+  }, [dispatch, user, items]); // Removed items dependency to prevent infinite loop
   
+  // Update filtered items when userItems change
   useEffect(() => {
-    // Filter items based on approval status
     if (Array.isArray(userItems)) {
       const available = userItems.filter(item => item.is_approved === true);
       const pending = userItems.filter(item => item.is_approved === null || item.is_approved === false);
@@ -72,14 +74,7 @@ const MyItems = () => {
     try {
       await dispatch(deleteItem(item.id)).unwrap();
       toast.success("Item deleted successfully");
-      
-      // Refresh items
-      dispatch(getItems());
-      if (user) {
-        setTimeout(() => {
-          dispatch(filterUserItems(user.id));
-        }, 300);
-      }
+      // No additional dispatch needed - reducer will update state
     } catch (error) {
       toast.error("Failed to delete item");
     }
@@ -98,14 +93,7 @@ const MyItems = () => {
       }
       
       setIsFormOpen(false);
-      // Refresh items
-      dispatch(getItems());
-      if (user) {
-        // Refresh user items
-        setTimeout(() => {
-          dispatch(filterUserItems(user.id));
-        }, 300);
-      }
+      // Redux state is already updated by the reducer
     } catch (error) {
       toast.error("Error submitting item: " + (error.message || "Unknown error"));
     }

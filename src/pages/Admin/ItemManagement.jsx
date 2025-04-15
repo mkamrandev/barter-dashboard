@@ -28,6 +28,7 @@ const ItemManagement = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [pendingItems, setPendingItems] = useState([]);
   
+  // Load items and categories once on component mount
   useEffect(() => {
     dispatch(getItems());
     dispatch(getCategories());
@@ -38,8 +39,8 @@ const ItemManagement = () => {
     };
   }, [dispatch]);
   
+  // Update pendingItems when items change - with dependency array
   useEffect(() => {
-    // Filter pending items for admin/subadmin approval tab
     if (Array.isArray(items)) {
       const pending = items.filter(item => item.is_approved === null || item.is_approved === false);
       setPendingItems(pending);
@@ -62,8 +63,7 @@ const ItemManagement = () => {
     try {
       await dispatch(deleteItem(item.id)).unwrap();
       toast.success("Item deleted successfully");
-      // Refresh items list
-      dispatch(getItems());
+      // No need to manually refresh items as the itemSlice reducer already updates the state
     } catch (error) {
       toast.error("Failed to delete item");
     }
@@ -73,8 +73,7 @@ const ItemManagement = () => {
     try {
       await dispatch(approveRejectItem({ id: item.id, isApproved: true })).unwrap();
       toast.success("Item approved successfully");
-      // Refresh items list
-      dispatch(getItems());
+      // No need to manually refresh items as the itemSlice reducer already updates the state
     } catch (error) {
       toast.error("Failed to approve item");
     }
@@ -84,8 +83,7 @@ const ItemManagement = () => {
     try {
       await dispatch(approveRejectItem({ id: item.id, isApproved: false })).unwrap();
       toast.success("Item rejected successfully");
-      // Refresh items list
-      dispatch(getItems());
+      // No need to manually refresh items as the itemSlice reducer already updates the state
     } catch (error) {
       toast.error("Failed to reject item");
     }
@@ -104,8 +102,7 @@ const ItemManagement = () => {
       }
       
       setIsFormOpen(false);
-      // Refresh items list
-      dispatch(getItems());
+      // No need to manually refresh items as the itemSlice reducer already updates the state
     } catch (error) {
       toast.error("Error submitting item: " + (error.message || "Unknown error"));
     }

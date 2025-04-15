@@ -28,8 +28,8 @@ interface ItemDetailsProps {
   onClose: () => void;
   onEdit?: (item: Item) => void;
   showAdminActions?: boolean;
-  onApprove?: (id: string) => void;
-  onReject?: (id: string) => void;
+  onApprove?: () => void;
+  onReject?: () => void;
 }
 
 const ItemDetails: React.FC<ItemDetailsProps> = ({
@@ -155,7 +155,7 @@ const ItemDetails: React.FC<ItemDetailsProps> = ({
             <>
               <Button 
                 className="bg-green-600 hover:bg-green-700"
-                onClick={() => onApprove(item.id)}
+                onClick={onApprove}
                 disabled={item.is_approved === true}
               >
                 <CheckCircle className="h-4 w-4 mr-2" /> Approve
@@ -163,7 +163,7 @@ const ItemDetails: React.FC<ItemDetailsProps> = ({
               
               <Button 
                 variant="destructive"
-                onClick={() => onReject(item.id)}
+                onClick={onReject}
                 disabled={item.is_approved === false}
               >
                 <XCircle className="h-4 w-4 mr-2" /> Reject

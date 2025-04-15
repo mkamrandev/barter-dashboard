@@ -1,9 +1,8 @@
 
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '@/redux/store';
-import { getItems, deleteItem, approveRejectItem, Item, reset } from '@/redux/slices/itemSlice';
-import { getCategories } from '@/redux/slices/categorySlice';
+import React, { useState } from 'react';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/redux/store';
+import { Item } from '@/redux/slices/itemSlice';
 import ItemCard from './ItemCard';
 import ItemDetails from './ItemDetails';
 import ConfirmationDialog from '@/components/ui/confirmation-dialog';
@@ -20,20 +19,28 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface ItemListProps {
+  items?: Item[];
   isAdmin?: boolean;
   onAddNew?: () => void;
   onEdit?: (item: Item) => void;
+  onDelete?: (id: string) => void;
+  onApprove?: (id: string) => void;
+  onReject?: (id: string) => void;
   userOnly?: boolean;
+  showStatus?: boolean;
 }
 
 const ItemList: React.FC<ItemListProps> = ({ 
+  items = [], 
   isAdmin = false, 
   onAddNew, 
   onEdit,
-  userOnly = false
+  onDelete,
+  onApprove,
+  onReject,
+  userOnly = false,
+  showStatus = false
 }) => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { items = [], isLoading } = useSelector((state: RootState) => state.items);
   const { user } = useSelector((state: RootState) => state.auth);
   const { categories = [] } = useSelector((state: RootState) => state.categories);
   
@@ -46,15 +53,6 @@ const ItemList: React.FC<ItemListProps> = ({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [approvalFilter, setApprovalFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-  
-  useEffect(() => {
-    dispatch(getItems());
-    dispatch(getCategories());
-    
-    return () => {
-      dispatch(reset());
-    };
-  }, [dispatch]);
   
   // Make sure items is always an array before filtering
   const itemsArray = Array.isArray(items) ? items : [];
@@ -85,32 +83,24 @@ const ItemList: React.FC<ItemListProps> = ({
     }
     
     // Filter by search query
-    if (searchQuery && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) {
+    if (searchQuery && item.title && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
     
     return true;
   });
   
-  const handleDelete = (id: string) => {
+  const handleDeleteClick = (id: string) => {
     setItemToDelete(id);
     setDeleteDialogOpen(true);
   };
   
   const confirmDelete = () => {
-    if (itemToDelete) {
-      dispatch(deleteItem(itemToDelete));
+    if (itemToDelete && onDelete) {
+      onDelete(itemToDelete);
       setDeleteDialogOpen(false);
       setItemToDelete(null);
     }
-  };
-  
-  const handleApprove = (id: string) => {
-    dispatch(approveRejectItem({ id, isApproved: true }));
-  };
-  
-  const handleReject = (id: string) => {
-    dispatch(approveRejectItem({ id, isApproved: false }));
   };
   
   const handleView = (item: Item) => {
@@ -122,24 +112,6 @@ const ItemList: React.FC<ItemListProps> = ({
     setShowDetails(false);
     setSelectedItem(null);
   };
-  
-  if (isLoading) {
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {[...Array(8)].map((_, index) => (
-          <div key={index} className="space-y-3">
-            <Skeleton className="h-40 w-full rounded-md" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-            <div className="flex space-x-2">
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
   
   return (
     <div className="space-y-6">
@@ -234,9 +206,9 @@ const ItemList: React.FC<ItemListProps> = ({
               item={item}
               onView={handleView}
               onEdit={onEdit}
-              onDelete={(!isAdmin || userOnly) ? handleDelete : undefined}
-              onApprove={isAdmin ? handleApprove : undefined}
-              onReject={isAdmin ? handleReject : undefined}
+              onDelete={onDelete ? () => handleDeleteClick(item.id) : undefined}
+              onApprove={onApprove ? () => onApprove(item.id) : undefined}
+              onReject={onReject ? () => onReject(item.id) : undefined}
               showAdminActions={isAdmin}
             />
           ))}
@@ -250,8 +222,8 @@ const ItemList: React.FC<ItemListProps> = ({
           onClose={handleClose}
           onEdit={onEdit}
           showAdminActions={isAdmin}
-          onApprove={isAdmin ? handleApprove : undefined}
-          onReject={isAdmin ? handleReject : undefined}
+          onApprove={onApprove ? () => onApprove(selectedItem.id) : undefined}
+          onReject={onReject ? () => onReject(selectedItem.id) : undefined}
         />
       )}
       
