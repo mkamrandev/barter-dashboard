@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -69,7 +70,10 @@ const ItemForm: React.FC<ItemFormProps> = ({
   onClose
 }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { categories } = useSelector((state: RootState) => state.categories);
+  const categoriesState = useSelector((state: RootState) => state.categories);
+  // Ensure categories is always an array
+  const categories = Array.isArray(categoriesState.categories) ? categoriesState.categories : [];
+  
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [existingImages, setExistingImages] = useState<string[]>(item?.images || []);
