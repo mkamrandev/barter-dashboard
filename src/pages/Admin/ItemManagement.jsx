@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const ItemManagement = () => {
@@ -59,9 +59,9 @@ const ItemManagement = () => {
     setIsFormOpen(true);
   };
   
-  const handleDelete = async (item) => {
+  const handleDelete = async (itemId) => {
     try {
-      await dispatch(deleteItem(item.id)).unwrap();
+      await dispatch(deleteItem(itemId)).unwrap();
       toast.success("Item deleted successfully");
       // No need to manually refresh items as the itemSlice reducer already updates the state
     } catch (error) {
@@ -69,9 +69,9 @@ const ItemManagement = () => {
     }
   };
   
-  const handleApprove = async (item) => {
+  const handleApprove = async (itemId) => {
     try {
-      await dispatch(approveRejectItem({ id: item.id, isApproved: true })).unwrap();
+      await dispatch(approveRejectItem({ id: itemId, isApproved: true })).unwrap();
       toast.success("Item approved successfully");
       // No need to manually refresh items as the itemSlice reducer already updates the state
     } catch (error) {
@@ -79,9 +79,9 @@ const ItemManagement = () => {
     }
   };
   
-  const handleReject = async (item) => {
+  const handleReject = async (itemId) => {
     try {
-      await dispatch(approveRejectItem({ id: item.id, isApproved: false })).unwrap();
+      await dispatch(approveRejectItem({ id: itemId, isApproved: false })).unwrap();
       toast.success("Item rejected successfully");
       // No need to manually refresh items as the itemSlice reducer already updates the state
     } catch (error) {
@@ -115,6 +115,10 @@ const ItemManagement = () => {
   // Check if user is admin or subadmin
   const isAdminOrSubadmin = user?.role === "admin" || user?.role === "subadmin";
   
+  // Ensure items is always an array
+  const itemsArray = Array.isArray(items) ? items : [];
+  const pendingItemsArray = Array.isArray(pendingItems) ? pendingItems : [];
+  
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -137,7 +141,7 @@ const ItemManagement = () => {
             </div>
           ) : (
             <ItemList 
-              items={items} 
+              items={itemsArray} 
               isAdmin={isAdminOrSubadmin} 
               onEdit={handleEdit}
               onDelete={handleDelete}
@@ -153,9 +157,9 @@ const ItemManagement = () => {
               <div className="flex justify-center items-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-            ) : pendingItems.length > 0 ? (
+            ) : pendingItemsArray.length > 0 ? (
               <ItemList 
-                items={pendingItems} 
+                items={pendingItemsArray} 
                 isAdmin={true} 
                 onEdit={handleEdit}
                 onDelete={handleDelete}

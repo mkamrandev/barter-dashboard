@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/redux/store';
 import { Item } from '@/redux/slices/itemSlice';
@@ -42,7 +42,9 @@ const ItemList: React.FC<ItemListProps> = ({
   showStatus = false
 }) => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const { categories = [] } = useSelector((state: RootState) => state.categories);
+  const categoriesState = useSelector((state: RootState) => state.categories);
+  // Ensure categories is always an array
+  const categories = Array.isArray(categoriesState.categories) ? categoriesState.categories : [];
   
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [showDetails, setShowDetails] = useState(false);

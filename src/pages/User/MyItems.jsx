@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const MyItems = () => {
   const dispatch = useDispatch();
-  const { userItems, isLoading } = useSelector((state) => state.items);
+  const { userItems, isLoading, items } = useSelector((state) => state.items);
   const { user } = useSelector((state) => state.auth);
   
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -45,7 +45,7 @@ const MyItems = () => {
     if (user) {
       dispatch(filterUserItems(user.id));
     }
-  }, [dispatch, user, items]); // Removed items dependency to prevent infinite loop
+  }, [dispatch, user]); // Removed the items dependency to prevent potential issues
   
   // Update filtered items when userItems change
   useEffect(() => {
