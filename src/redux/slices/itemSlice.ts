@@ -154,7 +154,11 @@ export const itemSlice = createSlice({
     },
     filterUserItems: (state, action) => {
       const userId = action.payload;
-      state.userItems = state.items.filter(item => item.user_id === userId);
+      if (Array.isArray(state.items)) {
+        state.userItems = state.items.filter(item => item.user_id === userId);
+      } else {
+        state.userItems = [];
+      }
     },
   },
   extraReducers: (builder) => {
@@ -166,12 +170,18 @@ export const itemSlice = createSlice({
       .addCase(getItems.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.items = action.payload.data || action.payload;
+        // Ensure we're setting an array to state.items
+        state.items = Array.isArray(action.payload.data) 
+          ? action.payload.data 
+          : Array.isArray(action.payload) 
+            ? action.payload 
+            : [];
       })
       .addCase(getItems.rejected, (state, action) => {
         state.isLoading = false;
         state.isError = true;
         state.message = action.payload as string;
+        state.items = []; // Ensure it's an empty array on error
       })
       // Get single item
       .addCase(getItemById.pending, (state) => {
@@ -195,7 +205,11 @@ export const itemSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         const newItem = action.payload.data || action.payload;
-        state.items.push(newItem);
+        if (Array.isArray(state.items)) {
+          state.items.push(newItem);
+        } else {
+          state.items = [newItem];
+        }
       })
       .addCase(createItem.rejected, (state, action) => {
         state.isLoading = false;
@@ -210,9 +224,11 @@ export const itemSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         const updatedItem = action.payload.data || action.payload;
-        state.items = state.items.map((item) =>
-          item.id === updatedItem.id ? updatedItem : item
-        );
+        if (Array.isArray(state.items)) {
+          state.items = state.items.map((item) =>
+            item.id === updatedItem.id ? updatedItem : item
+          );
+        }
       })
       .addCase(updateItem.rejected, (state, action) => {
         state.isLoading = false;
@@ -226,7 +242,9 @@ export const itemSlice = createSlice({
       .addCase(deleteItem.fulfilled, (state, action) => {
         state.isLoading = false;
         state.isSuccess = true;
-        state.items = state.items.filter((item) => item.id !== action.payload);
+        if (Array.isArray(state.items)) {
+          state.items = state.items.filter((item) => item.id !== action.payload);
+        }
       })
       .addCase(deleteItem.rejected, (state, action) => {
         state.isLoading = false;
@@ -241,9 +259,11 @@ export const itemSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         const { id, isApproved } = action.payload;
-        state.items = state.items.map((item) =>
-          item.id === id ? { ...item, is_approved: isApproved } : item
-        );
+        if (Array.isArray(state.items)) {
+          state.items = state.items.map((item) =>
+            item.id === id ? { ...item, is_approved: isApproved } : item
+          );
+        }
       })
       .addCase(approveRejectItem.rejected, (state, action) => {
         state.isLoading = false;

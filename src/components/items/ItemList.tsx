@@ -33,9 +33,9 @@ const ItemList: React.FC<ItemListProps> = ({
   userOnly = false
 }) => {
   const dispatch = useDispatch<AppDispatch>();
-  const { items, isLoading } = useSelector((state: RootState) => state.items);
+  const { items = [], isLoading } = useSelector((state: RootState) => state.items);
   const { user } = useSelector((state: RootState) => state.auth);
-  const { categories } = useSelector((state: RootState) => state.categories);
+  const { categories = [] } = useSelector((state: RootState) => state.categories);
   
   const [selectedItem, setSelectedItem] = useState<Item | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -56,7 +56,10 @@ const ItemList: React.FC<ItemListProps> = ({
     };
   }, [dispatch]);
   
-  const filteredItems = items.filter((item) => {
+  // Make sure items is always an array before filtering
+  const itemsArray = Array.isArray(items) ? items : [];
+  
+  const filteredItems = itemsArray.filter((item) => {
     // Filter by user if userOnly is true
     if (userOnly && user && item.user_id !== user.id) {
       return false;

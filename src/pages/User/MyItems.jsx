@@ -24,6 +24,7 @@ const MyItems = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
   const [formMode, setFormMode] = useState("create"); // create or edit
+  const [activeTab, setActiveTab] = useState("all");
   
   useEffect(() => {
     dispatch(getItems());
@@ -54,21 +55,26 @@ const MyItems = () => {
   };
   
   const handleSubmit = async (data, images) => {
-    if (formMode === "create") {
-      // For create, we need to add the current user's ID
-      await dispatch(createItem({ ...data, user_id: user.id, images }));
-    } else {
-      // For update
-      await dispatch(updateItem({ id: currentItem.id, itemData: { ...data, images } }));
-    }
-    
-    setIsFormOpen(false);
-    dispatch(resetItems());
-    if (user) {
-      // Refresh user items
-      setTimeout(() => {
-        dispatch(getItems());
-      }, 500);
+    try {
+      if (formMode === "create") {
+        // For create, we need to add the current user's ID
+        await dispatch(createItem({ ...data, user_id: user?.id, images })).unwrap();
+      } else {
+        // For update
+        await dispatch(updateItem({ id: currentItem.id, itemData: { ...data, images } })).unwrap();
+      }
+      
+      setIsFormOpen(false);
+      // Refresh items
+      dispatch(getItems());
+      if (user) {
+        // Refresh user items
+        setTimeout(() => {
+          dispatch(filterUserItems(user.id));
+        }, 300);
+      }
+    } catch (error) {
+      console.error("Error submitting item:", error);
     }
   };
   
@@ -85,7 +91,7 @@ const MyItems = () => {
         </Button>
       </div>
       
-      <Tabs defaultValue="all" className="space-y-4">
+      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All Items</TabsTrigger>
           <TabsTrigger value="available">Available</TabsTrigger>
