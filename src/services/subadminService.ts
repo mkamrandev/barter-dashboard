@@ -11,7 +11,7 @@ const createSubadmin = async (subadminData: any) => {
       formData.append(key, subadminData[key]);
     } else if (key === 'password') {
       formData.append('password', subadminData[key]);
-      formData.append('password_confirmation', subadminData.confirmPassword);
+      formData.append('confirm_password', subadminData.confirmPassword || subadminData[key]);
     } else if (key !== 'confirmPassword') {
       formData.append(key, subadminData[key]);
     }

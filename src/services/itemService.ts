@@ -43,6 +43,7 @@ const createItem = async (itemData: any) => {
 // Update an item
 const updateItem = async (id: string, itemData: any) => {
   const formData = new FormData();
+  formData.append('_method', 'PUT');
   
   // Handle regular fields
   Object.keys(itemData).forEach((key) => {
@@ -58,7 +59,7 @@ const updateItem = async (id: string, itemData: any) => {
     }
   }
 
-  const response = await api.put(`/items/${id}`, formData, {
+  const response = await api.post(`/items/${id}`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -75,7 +76,15 @@ const deleteItem = async (id: string) => {
 
 // Approve or reject an item
 const approveRejectItem = async (id: string, isApproved: boolean) => {
-  const response = await api.put(`/item/approveORreject/${id}`, { is_approved: isApproved });
+  const formData = new FormData();
+  formData.append('_method', 'PUT');
+  formData.append('is_approved', isApproved ? 'approved' : 'rejected');
+  
+  const response = await api.post(`/item/approveORreject/${id}`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
   return response.data;
 };
 

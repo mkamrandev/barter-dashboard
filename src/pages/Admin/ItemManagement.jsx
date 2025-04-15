@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getItems, reset as resetItems } from "@/redux/slices/itemSlice";
+import { getItems, reset as resetItems, approveRejectItem } from "@/redux/slices/itemSlice";
 import { getCategories, reset as resetCategories } from "@/redux/slices/categorySlice";
 import ItemList from "@/components/items/ItemList";
 import ItemForm from "@/components/items/ItemForm";
-import { updateItem, createItem } from "@/redux/slices/itemSlice";
+import { updateItem, createItem, deleteItem } from "@/redux/slices/itemSlice";
 import {
   Dialog,
   DialogContent,
@@ -14,16 +14,19 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { toast } from "sonner";
 
 const ItemManagement = () => {
   const dispatch = useDispatch();
-  const { isLoading } = useSelector((state) => state.items);
+  const { items, isLoading } = useSelector((state) => state.items);
+  const { user } = useSelector((state) => state.auth);
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
   const [formMode, setFormMode] = useState("create"); // create or edit
   const [activeTab, setActiveTab] = useState("all");
+  const [pendingItems, setPendingItems] = useState([]);
   
   useEffect(() => {
     dispatch(getItems());
@@ -34,6 +37,14 @@ const ItemManagement = () => {
       dispatch(resetCategories());
     };
   }, [dispatch]);
+  
+  useEffect(() => {
+    // Filter pending items for admin/subadmin approval tab
+    if (Array.isArray(items)) {
+      const pending = items.filter(item => item.is_approved === null || item.is_approved === false);
+      setPendingItems(pending);
+    }
+  }, [items]);
   
   const handleAddNew = () => {
     setCurrentItem(null);
@@ -47,27 +58,65 @@ const ItemManagement = () => {
     setIsFormOpen(true);
   };
   
+  const handleDelete = async (item) => {
+    try {
+      await dispatch(deleteItem(item.id)).unwrap();
+      toast.success("Item deleted successfully");
+      // Refresh items list
+      dispatch(getItems());
+    } catch (error) {
+      toast.error("Failed to delete item");
+    }
+  };
+  
+  const handleApprove = async (item) => {
+    try {
+      await dispatch(approveRejectItem({ id: item.id, isApproved: true })).unwrap();
+      toast.success("Item approved successfully");
+      // Refresh items list
+      dispatch(getItems());
+    } catch (error) {
+      toast.error("Failed to approve item");
+    }
+  };
+  
+  const handleReject = async (item) => {
+    try {
+      await dispatch(approveRejectItem({ id: item.id, isApproved: false })).unwrap();
+      toast.success("Item rejected successfully");
+      // Refresh items list
+      dispatch(getItems());
+    } catch (error) {
+      toast.error("Failed to reject item");
+    }
+  };
+  
   const handleSubmit = async (data, images) => {
     try {
       if (formMode === "create") {
         // For create, we need to add the current user's ID
-        await dispatch(createItem({ ...data, images })).unwrap();
+        await dispatch(createItem({ ...data, user_id: user?.id, images })).unwrap();
+        toast.success("Item created successfully");
       } else {
         // For update
         await dispatch(updateItem({ id: currentItem.id, itemData: { ...data, images } })).unwrap();
+        toast.success("Item updated successfully");
       }
       
       setIsFormOpen(false);
       // Refresh items list
       dispatch(getItems());
     } catch (error) {
-      console.error("Error submitting item:", error);
+      toast.error("Error submitting item: " + (error.message || "Unknown error"));
     }
   };
   
   const closeForm = () => {
     setIsFormOpen(false);
   };
+  
+  // Check if user is admin or subadmin
+  const isAdminOrSubadmin = user?.role === "admin" || user?.role === "subadmin";
   
   return (
     <div className="space-y-6">
@@ -81,24 +130,48 @@ const ItemManagement = () => {
       <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All Items</TabsTrigger>
-          <TabsTrigger value="pending">Pending Approval</TabsTrigger>
+          {isAdminOrSubadmin && <TabsTrigger value="pending">Pending Approval</TabsTrigger>}
         </TabsList>
         
         <TabsContent value="all" className="space-y-4">
-          <ItemList 
-            isAdmin={true} 
-            onEdit={handleEdit}
-            onAddNew={handleAddNew}
-          />
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <ItemList 
+              items={items} 
+              isAdmin={isAdminOrSubadmin} 
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onApprove={handleApprove}
+              onReject={handleReject}
+            />
+          )}
         </TabsContent>
         
-        <TabsContent value="pending" className="space-y-4">
-          <ItemList 
-            isAdmin={true} 
-            onEdit={handleEdit}
-            onAddNew={handleAddNew}
-          />
-        </TabsContent>
+        {isAdminOrSubadmin && (
+          <TabsContent value="pending" className="space-y-4">
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : pendingItems.length > 0 ? (
+              <ItemList 
+                items={pendingItems} 
+                isAdmin={true} 
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onApprove={handleApprove}
+                onReject={handleReject}
+              />
+            ) : (
+              <div className="text-center py-12 border rounded-md">
+                <p className="text-gray-500">No items pending approval</p>
+              </div>
+            )}
+          </TabsContent>
+        )}
       </Tabs>
       
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>

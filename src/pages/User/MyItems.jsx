@@ -5,9 +5,10 @@ import { getItems, reset as resetItems, filterUserItems } from "@/redux/slices/i
 import { getCategories, reset as resetCategories } from "@/redux/slices/categorySlice";
 import ItemList from "@/components/items/ItemList";
 import ItemForm from "@/components/items/ItemForm";
-import { updateItem, createItem } from "@/redux/slices/itemSlice";
+import { updateItem, createItem, deleteItem } from "@/redux/slices/itemSlice";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -18,13 +19,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const MyItems = () => {
   const dispatch = useDispatch();
-  const { isLoading } = useSelector((state) => state.items);
+  const { userItems, isLoading } = useSelector((state) => state.items);
   const { user } = useSelector((state) => state.auth);
   
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [currentItem, setCurrentItem] = useState(null);
   const [formMode, setFormMode] = useState("create"); // create or edit
   const [activeTab, setActiveTab] = useState("all");
+  const [availableItems, setAvailableItems] = useState([]);
+  const [pendingItems, setPendingItems] = useState([]);
   
   useEffect(() => {
     dispatch(getItems());
@@ -42,6 +45,17 @@ const MyItems = () => {
     }
   }, [dispatch, user]);
   
+  useEffect(() => {
+    // Filter items based on approval status
+    if (Array.isArray(userItems)) {
+      const available = userItems.filter(item => item.is_approved === true);
+      const pending = userItems.filter(item => item.is_approved === null || item.is_approved === false);
+      
+      setAvailableItems(available);
+      setPendingItems(pending);
+    }
+  }, [userItems]);
+  
   const handleAddNew = () => {
     setCurrentItem(null);
     setFormMode("create");
@@ -54,14 +68,33 @@ const MyItems = () => {
     setIsFormOpen(true);
   };
   
+  const handleDelete = async (item) => {
+    try {
+      await dispatch(deleteItem(item.id)).unwrap();
+      toast.success("Item deleted successfully");
+      
+      // Refresh items
+      dispatch(getItems());
+      if (user) {
+        setTimeout(() => {
+          dispatch(filterUserItems(user.id));
+        }, 300);
+      }
+    } catch (error) {
+      toast.error("Failed to delete item");
+    }
+  };
+  
   const handleSubmit = async (data, images) => {
     try {
       if (formMode === "create") {
         // For create, we need to add the current user's ID
         await dispatch(createItem({ ...data, user_id: user?.id, images })).unwrap();
+        toast.success("Item created successfully");
       } else {
         // For update
         await dispatch(updateItem({ id: currentItem.id, itemData: { ...data, images } })).unwrap();
+        toast.success("Item updated successfully");
       }
       
       setIsFormOpen(false);
@@ -74,12 +107,24 @@ const MyItems = () => {
         }, 300);
       }
     } catch (error) {
-      console.error("Error submitting item:", error);
+      toast.error("Error submitting item: " + (error.message || "Unknown error"));
     }
   };
   
   const closeForm = () => {
     setIsFormOpen(false);
+  };
+  
+  const getItemsForTab = () => {
+    switch (activeTab) {
+      case "available":
+        return availableItems;
+      case "pending":
+        return pendingItems;
+      case "all":
+      default:
+        return userItems;
+    }
   };
   
   return (
@@ -94,32 +139,30 @@ const MyItems = () => {
       <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList>
           <TabsTrigger value="all">All Items</TabsTrigger>
-          <TabsTrigger value="available">Available</TabsTrigger>
+          <TabsTrigger value="available">Approved</TabsTrigger>
           <TabsTrigger value="pending">Pending</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="all" className="space-y-4">
-          <ItemList 
-            onAddNew={handleAddNew} 
-            onEdit={handleEdit}
-            userOnly={true}
-          />
-        </TabsContent>
-        
-        <TabsContent value="available" className="space-y-4">
-          <ItemList 
-            onAddNew={handleAddNew} 
-            onEdit={handleEdit}
-            userOnly={true}
-          />
-        </TabsContent>
-        
-        <TabsContent value="pending" className="space-y-4">
-          <ItemList 
-            onAddNew={handleAddNew} 
-            onEdit={handleEdit}
-            userOnly={true}
-          />
+        <TabsContent value={activeTab} className="space-y-4">
+          {isLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : getItemsForTab().length > 0 ? (
+            <ItemList 
+              items={getItemsForTab()}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              showStatus={true}
+            />
+          ) : (
+            <div className="text-center py-12 border rounded-md">
+              <p className="text-gray-500">No items found</p>
+              <Button variant="outline" className="mt-4" onClick={handleAddNew}>
+                <Plus className="h-4 w-4 mr-2" /> Add New Item
+              </Button>
+            </div>
+          )}
         </TabsContent>
       </Tabs>
       

@@ -87,6 +87,30 @@ const restoreUser = async (id: string) => {
   return response.data;
 };
 
+// Create a new user (for admin)
+const createUser = async (userData: any) => {
+  const formData = new FormData();
+  
+  Object.keys(userData).forEach((key) => {
+    if (key === 'profile_picture' && userData[key] instanceof File) {
+      formData.append(key, userData[key]);
+    } else if (key === 'password') {
+      formData.append('password', userData[key]);
+      formData.append('password_confirmation', userData.confirmPassword || userData[key]);
+    } else if (key !== 'confirmPassword') {
+      formData.append(key, userData[key]);
+    }
+  });
+
+  const response = await api.post('/auth/register', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  
+  return response.data;
+};
+
 const userService = {
   getAllUsers,
   getInactiveUsers,
@@ -95,7 +119,8 @@ const userService = {
   updatePassword,
   deleteUser,
   permanentlyDeleteUser,
-  restoreUser
+  restoreUser,
+  createUser
 };
 
 export default userService;

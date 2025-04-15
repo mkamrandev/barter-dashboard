@@ -1,4 +1,3 @@
-
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from '../../services/authService';
 import { toast } from 'sonner';
@@ -56,16 +55,16 @@ export const logoutUser = createAsyncThunk(
   'auth/logout',
   async (_, thunkAPI) => {
     try {
+      // Clear local state first to prevent dashboard flash
+      authService.clearLocalStorage();
+      // Then call the API
       await authService.logout();
-      toast.success('Logged out successfully');
       return null;
     } catch (error) {
       const message = error.response?.data?.message || 
                       error.message || 
                       'Logout failed';
-      toast.error(message);
-      // Still clear local state even if API call fails
-      authService.clearLocalStorage();
+      // Already cleared local storage
       return thunkAPI.rejectWithValue(message);
     }
   }

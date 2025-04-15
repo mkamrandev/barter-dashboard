@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -92,7 +91,7 @@ const App = () => {
                 <Route path="categories" element={<CategoryManagement />} />
                 <Route path="items" element={<ItemManagement />} />
                 <Route path="verifications" element={<VerificationManagement />} />
-                <Route path="profile" element={<div className="p-4">Admin Profile Page (Coming Soon)</div>} />
+                <Route path="profile" element={<ProfilePage />} />
                 <Route path="settings" element={<div className="p-4">Settings Page (Coming Soon)</div>} />
                 <Route path="help" element={<div className="p-4">Help & Support (Coming Soon)</div>} />
                 <Route index element={<Navigate to="dashboard" replace />} />
@@ -110,8 +109,11 @@ const App = () => {
                 }
               >
                 <Route path="dashboard" element={<SubAdminDashboard />} />
+                <Route path="items" element={<ItemManagement />} />
+                <Route path="users" element={<UserManagement />} />
+                <Route path="categories" element={<CategoryManagement />} />
                 <Route path="verifications" element={<VerificationManagement />} />
-                <Route path="profile" element={<div className="p-4">Subadmin Profile Page (Coming Soon)</div>} />
+                <Route path="profile" element={<ProfilePage />} />
                 <Route path="settings" element={<div className="p-4">Settings Page (Coming Soon)</div>} />
                 <Route path="help" element={<div className="p-4">Help & Support (Coming Soon)</div>} />
                 <Route index element={<Navigate to="dashboard" replace />} />
@@ -132,7 +134,7 @@ const App = () => {
                 <Route path="items/new" element={<ItemForm />} />
                 <Route path="items" element={<MyItems />} />
                 <Route path="verification" element={<Verification />} />
-                <Route path="profile" element={<div className="p-4">User Profile Page (Coming Soon)</div>} />
+                <Route path="profile" element={<ProfilePage />} />
                 <Route path="settings" element={<div className="p-4">Settings Page (Coming Soon)</div>} />
                 <Route path="help" element={<div className="p-4">Help & Support (Coming Soon)</div>} />
                 <Route index element={<Navigate to="dashboard" replace />} />
