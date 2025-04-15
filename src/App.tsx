@@ -1,3 +1,5 @@
+
+import React from 'react';
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -36,6 +38,7 @@ import MyItems from "./pages/User/MyItems";
 
 // Common Pages
 import NotFound from "./pages/NotFound";
+import ProfilePage from "./pages/Profile/ProfilePage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -151,3 +154,4 @@ const App = () => {
 };
 
 export default App;
+
