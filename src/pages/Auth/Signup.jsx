@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -7,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Upload } from "lucide-react";
-import { registerUser, reset } from "@/redux/slices/authSlice";
+import { register, reset } from "@/redux/slices/authSlice";
 import { toast } from "sonner";
 
 const Signup = () => {
@@ -29,7 +28,6 @@ const Signup = () => {
   const [previewImage, setPreviewImage] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
 
-  // Redirect if authenticated
   useEffect(() => {
     if (isAuthenticated && user) {
       navigate(`/${user.role.toLowerCase()}/dashboard`, { replace: true });
@@ -44,12 +42,10 @@ const Signup = () => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     
-    // Clear validation errors when the user types
     if (validationErrors[name]) {
       setValidationErrors(prev => ({...prev, [name]: null}));
     }
     
-    // Clear password match error when either password field changes
     if (name === 'password' || name === 'confirm_password') {
       setValidationErrors(prev => ({...prev, passwordMatch: null}));
     }
@@ -60,7 +56,6 @@ const Signup = () => {
     if (file) {
       setFormData((prev) => ({ ...prev, profile_picture: file }));
       
-      // Create a preview URL for the selected image
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewImage(reader.result);
@@ -113,7 +108,7 @@ const Signup = () => {
       return;
     }
     
-    dispatch(registerUser(formData))
+    dispatch(register(formData))
       .unwrap()
       .then(() => {
         toast.success("Registration successful! Please log in.");
