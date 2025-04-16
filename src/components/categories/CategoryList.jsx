@@ -1,25 +1,19 @@
 
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '@/redux/store';
-import { getCategories, deleteCategory, Category, reset } from '@/redux/slices/categorySlice';
+import { getCategories, deleteCategory, reset } from '@/redux/slices/categorySlice';
 import DataTable from '@/components/common/DataTable';
-import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
 import ConfirmationDialog from '@/components/ui/confirmation-dialog';
 import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 
-interface CategoryListProps {
-  onEdit: (category: Category) => void;
-}
-
-const CategoryList: React.FC<CategoryListProps> = ({ onEdit }) => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { categories, isLoading } = useSelector((state: RootState) => state.categories);
+function CategoryList({ onEdit }) {
+  const dispatch = useDispatch();
+  const { categories, isLoading } = useSelector((state) => state.categories);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState(null);
 
   useEffect(() => {
     dispatch(getCategories());
@@ -29,7 +23,7 @@ const CategoryList: React.FC<CategoryListProps> = ({ onEdit }) => {
     };
   }, [dispatch]);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id) => {
     setCategoryToDelete(id);
     setDeleteDialogOpen(true);
   };
@@ -42,7 +36,7 @@ const CategoryList: React.FC<CategoryListProps> = ({ onEdit }) => {
     }
   };
 
-  const columns: ColumnDef<Category>[] = [
+  const columns = [
     {
       accessorKey: 'name',
       header: 'Name',
@@ -121,6 +115,6 @@ const CategoryList: React.FC<CategoryListProps> = ({ onEdit }) => {
       />
     </div>
   );
-};
+}
 
 export default CategoryList;

@@ -15,7 +15,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { X } from 'lucide-react';
-import { Category } from '@/redux/slices/categorySlice';
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -30,18 +29,8 @@ const formSchema = z.object({
   }),
 });
 
-interface CategoryFormProps {
-  onSubmit: (data: z.infer<typeof formSchema>) => void;
-  category?: Category | null;
-  onClose?: () => void;
-}
-
-const CategoryForm: React.FC<CategoryFormProps> = ({ 
-  onSubmit, 
-  category = null,
-  onClose
-}) => {
-  const form = useForm<z.infer<typeof formSchema>>({
+function CategoryForm({ onSubmit, category = null, onClose }) {
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: category?.name || '',
@@ -104,6 +93,6 @@ const CategoryForm: React.FC<CategoryFormProps> = ({
       </form>
     </Form>
   );
-};
+}
 
 export default CategoryForm;

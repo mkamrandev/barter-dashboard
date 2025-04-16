@@ -1,10 +1,8 @@
-
 import api from './apiService';
 
 // Create subadmin
-const createSubadmin = async (subadminData: any) => {
+const createSubadmin = async (subadminData) => {
   try {
-    // Handle FormData for file upload
     const formData = new FormData();
     
     Object.keys(subadminData).forEach((key) => {
@@ -18,7 +16,6 @@ const createSubadmin = async (subadminData: any) => {
       }
     });
 
-    // Add first_name and last_name if provided in camelCase
     if (subadminData.firstName && !formData.has('first_name')) {
       formData.append('first_name', subadminData.firstName);
     }
@@ -64,19 +61,19 @@ const getInactiveSubadmins = async () => {
 };
 
 // Delete subadmin (soft delete)
-const deleteSubadmin = async (id: string) => {
+const deleteSubadmin = async (id) => {
   const response = await api.delete(`/delete-subAdmin/${id}`);
   return response.data;
 };
 
 // Permanently delete subadmin
-const permanentlyDeleteSubadmin = async (id: string) => {
+const permanentlyDeleteSubadmin = async (id) => {
   const response = await api.delete(`/permenant-delete-subAdmin/${id}`);
   return response.data;
 };
 
 // Restore subadmin
-const restoreSubadmin = async (id: string) => {
+const restoreSubadmin = async (id) => {
   const formData = new FormData();
   formData.append('_method', 'put');
   
