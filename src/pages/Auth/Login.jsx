@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
-import { loginUser, reset } from "@/redux/slices/authSlice";
+import { login, reset } from "@/redux/slices/authSlice";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -54,7 +54,7 @@ const Login = () => {
       return;
     }
     
-    dispatch(loginUser(formData))
+    dispatch(login(formData))
       .unwrap()
       .then(() => {
         // Success will be handled by the useEffect
