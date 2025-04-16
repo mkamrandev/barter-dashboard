@@ -24,13 +24,13 @@ const getInactiveUsers = async () => {
 };
 
 // Get specific user
-const getUser = async (id: string) => {
+const getUser = async (id) => {
   const response = await api.get(`/specified-user/${id}`);
   return response.data;
 };
 
 // Update user
-const updateUser = async (userData: { id: string; [key: string]: any }) => {
+const updateUser = async (userData) => {
   const { id, ...data } = userData;
   
   // Handle FormData for file upload if profile_picture exists
@@ -55,7 +55,7 @@ const updateUser = async (userData: { id: string; [key: string]: any }) => {
 };
 
 // Update password
-const updatePassword = async (passwordData: { id: string; oldPassword: string; newPassword: string; confirmPassword: string }) => {
+const updatePassword = async (passwordData) => {
   const { id, ...data } = passwordData;
   
   const formData = new FormData();
@@ -73,19 +73,19 @@ const updatePassword = async (passwordData: { id: string; oldPassword: string; n
 };
 
 // Delete user (soft delete)
-const deleteUser = async (id: string) => {
+const deleteUser = async (id) => {
   const response = await api.delete(`/delete/${id}`);
   return response.data;
 };
 
 // Permanently delete user
-const permanentlyDeleteUser = async (id: string) => {
+const permanentlyDeleteUser = async (id) => {
   const response = await api.delete(`/permenant-delete-user/${id}`);
   return response.data;
 };
 
 // Restore user
-const restoreUser = async (id: string) => {
+const restoreUser = async (id) => {
   const formData = new FormData();
   formData.append('_method', 'put');
   
@@ -98,7 +98,7 @@ const restoreUser = async (id: string) => {
 };
 
 // Create a new user (for admin)
-const createUser = async (userData: any) => {
+const createUser = async (userData) => {
   const formData = new FormData();
   
   Object.keys(userData).forEach((key) => {
