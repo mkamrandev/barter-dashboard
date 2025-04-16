@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -20,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { logoutUser } from "@/redux/slices/authSlice";
+import { logout } from "@/redux/slices/authSlice";
 
 const Header = ({ toggleSidebar, sidebarOpen, userRole }) => {
   const navigate = useNavigate();
@@ -29,7 +28,7 @@ const Header = ({ toggleSidebar, sidebarOpen, userRole }) => {
   const [unreadNotifications, setUnreadNotifications] = useState(3);
 
   const handleLogout = () => {
-    dispatch(logoutUser());
+    dispatch(logout());
     navigate("/login");
   };
 
