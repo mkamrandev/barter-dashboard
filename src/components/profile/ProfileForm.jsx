@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { updateUser } from "@/redux/slices/userSlice";
+import { loadUserFromToken } from "@/redux/slices/authSlice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,9 +45,11 @@ const ProfileForm = () => {
     const formData = { ...data, id: user.id };
     try {
       await dispatch(updateUser(formData)).unwrap();
+      // After successful update, reload the user data
+      await dispatch(loadUserFromToken()).unwrap();
       toast.success("Profile updated successfully");
     } catch (error) {
-      toast.error("Failed to update profile");
+      toast.error("Failed to update profile: " + (error?.message || "Unknown error"));
     }
   };
   
@@ -69,7 +72,23 @@ const ProfileForm = () => {
     return name.charAt(0).toUpperCase();
   };
   
-  const avatarUrl = user?.profile_picture || user?.avatar;
+  // Use the full URL for avatar instead of just the filename
+  const getAvatarUrl = () => {
+    if (profilePreview) return profilePreview;
+    
+    const avatarPath = user?.profile_picture || user?.avatar;
+    if (!avatarPath) return null;
+    
+    // Check if the path is already a full URL
+    if (avatarPath.startsWith('http')) {
+      return avatarPath;
+    } else {
+      // Append the base URL if not a full URL
+      return `http://127.0.0.1:8000/storage/${avatarPath}`;
+    }
+  };
+  
+  const avatarUrl = getAvatarUrl();
   
   return (
     <Card className="w-full max-w-4xl mx-auto">
@@ -79,9 +98,7 @@ const ProfileForm = () => {
       <CardContent className="space-y-6">
         <div className="flex flex-col items-center gap-4 sm:flex-row">
           <Avatar className="h-24 w-24">
-            {profilePreview ? (
-              <AvatarImage src={profilePreview} />
-            ) : avatarUrl ? (
+            {avatarUrl ? (
               <AvatarImage src={avatarUrl} />
             ) : (
               <AvatarFallback className="text-lg bg-primary text-primary-foreground">

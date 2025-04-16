@@ -1,9 +1,10 @@
+
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import authService from '../../services/authService';
 import { toast } from 'sonner';
 
 // Get user from localStorage
-const user = JSON.parse(localStorage.getItem('user'));
+const user = JSON.parse(localStorage.getItem('user') || 'null');
 const accessToken = localStorage.getItem('access_token');
 
 const initialState = {
@@ -20,9 +21,9 @@ export const registerUser = createAsyncThunk(
   async (userData, thunkAPI) => {
     try {
       const response = await authService.register(userData);
-      toast.success('Registration successful!');
+      // Don't store the token/user on registration, require explicit login
       return response;
-    } catch (error) {
+    } catch (error: any) {
       const message = error.response?.data?.message || 
                       error.message || 
                       'Registration failed';
@@ -40,12 +41,15 @@ export const loginUser = createAsyncThunk(
       const response = await authService.login(userData);
       toast.success('Login successful!');
       return response;
-    } catch (error) {
+    } catch (error: any) {
       const message = error.response?.data?.message || 
                       error.message || 
                       'Login failed';
-      toast.error(message);
-      return thunkAPI.rejectWithValue(message);
+      toast.error('Login failed: ' + (error.response?.data?.message || 'Invalid credentials'));
+      return thunkAPI.rejectWithValue({ 
+        message, 
+        status: error.response?.status || null 
+      });
     }
   }
 );
@@ -60,7 +64,7 @@ export const logoutUser = createAsyncThunk(
       // Then call the API
       await authService.logout();
       return null;
-    } catch (error) {
+    } catch (error: any) {
       const message = error.response?.data?.message || 
                       error.message || 
                       'Logout failed';
@@ -76,7 +80,7 @@ export const loadUserFromToken = createAsyncThunk(
   async (_, thunkAPI) => {
     try {
       return await authService.getCurrentUser();
-    } catch (error) {
+    } catch (error: any) {
       const message = error.response?.data?.message || 
                       error.message || 
                       'Failed to load user data';
@@ -105,11 +109,10 @@ const authSlice = createSlice({
         state.isLoading = true;
         state.error = null;
       })
-      .addCase(registerUser.fulfilled, (state, action) => {
+      .addCase(registerUser.fulfilled, (state) => {
         state.isLoading = false;
-        state.isAuthenticated = true;
-        state.user = action.payload.user;
-        state.accessToken = action.payload.access_token;
+        // Don't authenticate on registration
+        state.isAuthenticated = false;
         state.error = null;
       })
       .addCase(registerUser.rejected, (state, action) => {

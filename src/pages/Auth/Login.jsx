@@ -20,6 +20,7 @@ const Login = () => {
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [loginError, setLoginError] = useState("");
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -37,11 +38,34 @@ const Login = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Clear error on input change
+    if (loginError) {
+      setLoginError("");
+    }
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    dispatch(loginUser(formData));
+    
+    // Basic validation
+    if (!formData.login.trim() || !formData.password) {
+      setLoginError("Please enter both email/username and password");
+      return;
+    }
+    
+    dispatch(loginUser(formData))
+      .unwrap()
+      .then(() => {
+        // Success will be handled by the useEffect
+      })
+      .catch((error) => {
+        if (error?.response?.status === 401) {
+          setLoginError("Invalid email/username or password");
+        } else {
+          setLoginError(error?.message || "Login failed. Please try again.");
+        }
+      });
   };
 
   return (
@@ -59,6 +83,11 @@ const Login = () => {
           <CardContent>
             <form onSubmit={handleSubmit}>
               <div className="space-y-4">
+                {loginError && (
+                  <div className="p-3 rounded-md bg-red-50 text-red-500 text-sm">
+                    {loginError}
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="login">Email or Username</Label>
                   <Input
@@ -68,6 +97,7 @@ const Login = () => {
                     required
                     value={formData.login}
                     onChange={handleChange}
+                    className={loginError ? "border-red-500" : ""}
                   />
                 </div>
                 <div className="space-y-2">
@@ -89,7 +119,7 @@ const Login = () => {
                       required
                       value={formData.password}
                       onChange={handleChange}
-                      className="pr-10"
+                      className={`pr-10 ${loginError ? "border-red-500" : ""}`}
                     />
                     <button
                       type="button"

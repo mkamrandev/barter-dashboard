@@ -92,18 +92,46 @@ const SubAdminManagement = () => {
 
   const handleDelete = (subadmin) => {
     if (activeTab === "active") {
-      dispatch(deleteSubadmin(subadmin.id));
+      dispatch(deleteSubadmin(subadmin.id))
+        .unwrap()
+        .then(() => {
+          toast.success("Subadmin deactivated successfully");
+        })
+        .catch((error) => {
+          toast.error("Failed to deactivate subadmin: " + error);
+        });
     } else {
-      dispatch(permanentlyDeleteSubadmin(subadmin.id));
+      dispatch(permanentlyDeleteSubadmin(subadmin.id))
+        .unwrap()
+        .then(() => {
+          toast.success("Subadmin permanently deleted");
+        })
+        .catch((error) => {
+          toast.error("Failed to delete subadmin: " + error);
+        });
     }
   };
 
   const handleActivate = (subadmin) => {
-    dispatch(restoreSubadmin(subadmin.id));
+    dispatch(restoreSubadmin(subadmin.id))
+      .unwrap()
+      .then(() => {
+        toast.success("Subadmin restored successfully");
+      })
+      .catch((error) => {
+        toast.error("Failed to restore subadmin: " + error);
+      });
   };
 
   const handleDeactivate = (subadmin) => {
-    dispatch(deleteSubadmin(subadmin.id));
+    dispatch(deleteSubadmin(subadmin.id))
+      .unwrap()
+      .then(() => {
+        toast.success("Subadmin deactivated successfully");
+      })
+      .catch((error) => {
+        toast.error("Failed to deactivate subadmin: " + error);
+      });
   };
 
   const handleAddSubadmin = (data) => {
@@ -124,6 +152,7 @@ const SubAdminManagement = () => {
       password: data.password,
       confirmPassword: data.confirmPassword,
       permissions: data.permissions,
+      role: "subadmin" // Ensure role is set
     };
 
     dispatch(createSubadmin(subadminToAdd))
@@ -131,9 +160,10 @@ const SubAdminManagement = () => {
       .then(() => {
         setIsAddDialogOpen(false);
         form.reset();
+        toast.success("Subadmin created successfully");
       })
-      .catch(() => {
-        // Error will be handled by the thunk
+      .catch((error) => {
+        toast.error("Failed to create subadmin: " + (error?.message || "Unknown error"));
       });
   };
 
@@ -210,7 +240,9 @@ const SubAdminManagement = () => {
   ];
 
   // Get the right data based on active tab
-  const displayedSubadmins = activeTab === "active" ? subadmins : inactiveSubadmins;
+  const displayedSubadmins = activeTab === "active" ? 
+    (Array.isArray(subadmins) ? subadmins : []) : 
+    (Array.isArray(inactiveSubadmins) ? inactiveSubadmins : []);
 
   return (
     <div className="space-y-6">

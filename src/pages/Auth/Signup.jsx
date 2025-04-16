@@ -8,11 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Eye, EyeOff, Upload } from "lucide-react";
 import { registerUser, reset } from "@/redux/slices/authSlice";
+import { toast } from "sonner";
 
 const Signup = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const { user, isLoading, isAuthenticated } = useSelector((state) => state.auth);
+  const { user, isLoading, isAuthenticated, error } = useSelector((state) => state.auth);
   
   const [formData, setFormData] = useState({
     email: "",
@@ -26,6 +27,7 @@ const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [previewImage, setPreviewImage] = useState(null);
+  const [validationErrors, setValidationErrors] = useState({});
 
   // Redirect if authenticated
   useEffect(() => {
@@ -41,6 +43,16 @@ const Signup = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Clear validation errors when the user types
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({...prev, [name]: null}));
+    }
+    
+    // Clear password match error when either password field changes
+    if (name === 'password' || name === 'confirm_password') {
+      setValidationErrors(prev => ({...prev, passwordMatch: null}));
+    }
   };
 
   const handleImageChange = (e) => {
@@ -58,26 +70,58 @@ const Signup = () => {
   };
 
   const validateForm = () => {
-    if (formData.password !== formData.confirm_password) {
-      return { valid: false, message: "Password and confirm password do not match" };
+    const errors = {};
+    
+    if (!formData.first_name.trim()) {
+      errors.first_name = "First name is required";
     }
     
-    if (formData.password.length < 6) {
-      return { valid: false, message: "Password must be at least 6 characters long" };
+    if (!formData.last_name.trim()) {
+      errors.last_name = "Last name is required";
     }
     
-    return { valid: true };
+    if (!formData.email.trim()) {
+      errors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      errors.email = "Email is invalid";
+    }
+    
+    if (!formData.username.trim()) {
+      errors.username = "Username is required";
+    }
+    
+    if (!formData.password) {
+      errors.password = "Password is required";
+    } else if (formData.password.length < 6) {
+      errors.password = "Password must be at least 6 characters";
+    }
+    
+    if (!formData.confirm_password) {
+      errors.confirm_password = "Please confirm your password";
+    } else if (formData.password !== formData.confirm_password) {
+      errors.passwordMatch = "Passwords do not match";
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
-    const validation = validateForm();
-    if (!validation.valid) {
+    if (!validateForm()) {
       return;
     }
     
-    dispatch(registerUser(formData));
+    dispatch(registerUser(formData))
+      .unwrap()
+      .then(() => {
+        toast.success("Registration successful! Please log in.");
+        navigate("/login");
+      })
+      .catch((error) => {
+        // Error will be displayed by the toast in the action
+      });
   };
 
   return (
@@ -104,7 +148,11 @@ const Signup = () => {
                       required
                       value={formData.first_name}
                       onChange={handleChange}
+                      className={validationErrors.first_name ? "border-red-500" : ""}
                     />
+                    {validationErrors.first_name && (
+                      <p className="text-sm text-red-500">{validationErrors.first_name}</p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="last_name">Last Name</Label>
@@ -114,7 +162,11 @@ const Signup = () => {
                       required
                       value={formData.last_name}
                       onChange={handleChange}
+                      className={validationErrors.last_name ? "border-red-500" : ""}
                     />
+                    {validationErrors.last_name && (
+                      <p className="text-sm text-red-500">{validationErrors.last_name}</p>
+                    )}
                   </div>
                 </div>
                 
@@ -128,7 +180,11 @@ const Signup = () => {
                     required
                     value={formData.email}
                     onChange={handleChange}
+                    className={validationErrors.email ? "border-red-500" : ""}
                   />
+                  {validationErrors.email && (
+                    <p className="text-sm text-red-500">{validationErrors.email}</p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -139,7 +195,11 @@ const Signup = () => {
                     required
                     value={formData.username}
                     onChange={handleChange}
+                    className={validationErrors.username ? "border-red-500" : ""}
                   />
+                  {validationErrors.username && (
+                    <p className="text-sm text-red-500">{validationErrors.username}</p>
+                  )}
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -154,7 +214,9 @@ const Signup = () => {
                         placeholder="••••••••"
                         value={formData.password}
                         onChange={handleChange}
-                        className="pr-10"
+                        className={`pr-10 ${
+                          validationErrors.password ? "border-red-500" : ""
+                        }`}
                       />
                       <button
                         type="button"
@@ -164,6 +226,9 @@ const Signup = () => {
                         {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
                     </div>
+                    {validationErrors.password && (
+                      <p className="text-sm text-red-500">{validationErrors.password}</p>
+                    )}
                   </div>
                   
                   <div className="space-y-2">
@@ -177,7 +242,11 @@ const Signup = () => {
                         placeholder="••••••••"
                         value={formData.confirm_password}
                         onChange={handleChange}
-                        className="pr-10"
+                        className={`pr-10 ${
+                          validationErrors.confirm_password || validationErrors.passwordMatch
+                            ? "border-red-500"
+                            : ""
+                        }`}
                       />
                       <button
                         type="button"
@@ -187,8 +256,15 @@ const Signup = () => {
                         {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                       </button>
                     </div>
+                    {validationErrors.confirm_password && (
+                      <p className="text-sm text-red-500">{validationErrors.confirm_password}</p>
+                    )}
                   </div>
                 </div>
+                
+                {validationErrors.passwordMatch && (
+                  <p className="text-sm text-red-500 -mt-2">{validationErrors.passwordMatch}</p>
+                )}
                 
                 <div className="space-y-2">
                   <Label htmlFor="profile_picture">Profile Picture</Label>

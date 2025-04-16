@@ -30,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import DataTable from "../../components/common/DataTable";
 import UserCard from "../../components/common/UserCard";
 import { toast } from "sonner";
-import { Filter, Plus, MoreHorizontal, UserCheck, UserX, Trash, PencilLine, Loader2, Grid, List } from "lucide-react";
+import { Plus, MoreHorizontal, UserCheck, UserX, Trash, PencilLine, Loader2, Grid, List } from "lucide-react";
 import {
   getAllUsers,
   getInactiveUsers,
@@ -79,7 +79,7 @@ const UserManagement = () => {
   const handleEdit = (user) => {
     setEditUser(user);
     form.reset({
-      name: user.name,
+      name: user.name || `${user.first_name || ''} ${user.last_name || ''}`.trim(),
       email: user.email,
     });
     setIsEditDialogOpen(true);
@@ -89,33 +89,67 @@ const UserManagement = () => {
     dispatch(updateUser({
       id: editUser.id,
       ...data
-    })).then(() => {
-      setIsEditDialogOpen(false);
-      form.reset();
-    });
+    }))
+      .unwrap()
+      .then(() => {
+        setIsEditDialogOpen(false);
+        form.reset();
+        toast.success("User updated successfully");
+      })
+      .catch((error) => {
+        toast.error("Failed to update user: " + (error?.message || "Unknown error"));
+      });
   };
 
   const handleDelete = (user) => {
     if (activeTab === "active") {
-      dispatch(deleteUser(user.id));
+      dispatch(deleteUser(user.id))
+        .unwrap()
+        .then(() => {
+          toast.success("User deactivated successfully");
+        })
+        .catch((error) => {
+          toast.error("Failed to deactivate user: " + error);
+        });
     } else {
-      dispatch(permanentlyDeleteUser(user.id));
+      dispatch(permanentlyDeleteUser(user.id))
+        .unwrap()
+        .then(() => {
+          toast.success("User permanently deleted");
+        })
+        .catch((error) => {
+          toast.error("Failed to delete user: " + error);
+        });
     }
   };
 
   const handleActivate = (user) => {
-    dispatch(restoreUser(user.id));
+    dispatch(restoreUser(user.id))
+      .unwrap()
+      .then(() => {
+        toast.success("User restored successfully");
+      })
+      .catch((error) => {
+        toast.error("Failed to restore user: " + error);
+      });
   };
 
   const handleDeactivate = (user) => {
-    dispatch(deleteUser(user.id));
+    dispatch(deleteUser(user.id))
+      .unwrap()
+      .then(() => {
+        toast.success("User deactivated successfully");
+      })
+      .catch((error) => {
+        toast.error("Failed to deactivate user: " + error);
+      });
   };
 
   const columns = [
     {
       accessorKey: "name",
       header: "Name",
-      cell: ({ row }) => <div className="font-medium">{row.getValue("name") || `${row.original.first_name} ${row.original.last_name}`}</div>,
+      cell: ({ row }) => <div className="font-medium">{row.getValue("name") || `${row.original.first_name || ''} ${row.original.last_name || ''}`.trim() || 'Unknown'}</div>,
     },
     {
       accessorKey: "email",
@@ -124,7 +158,7 @@ const UserManagement = () => {
     {
       accessorKey: "created_at",
       header: "Join Date",
-      cell: ({ row }) => <div>{new Date(row.original.created_at).toLocaleDateString()}</div>,
+      cell: ({ row }) => <div>{row.original.created_at ? new Date(row.original.created_at).toLocaleDateString() : "Unknown"}</div>,
     },
     {
       accessorKey: "status",
@@ -136,7 +170,7 @@ const UserManagement = () => {
               row.getValue("status") === "active" ? "bg-green-500" : "bg-gray-500"
             }`}
           />
-          <span className="capitalize">{row.getValue("status")}</span>
+          <span className="capitalize">{row.getValue("status") || "active"}</span>
         </div>
       ),
     },
@@ -183,8 +217,10 @@ const UserManagement = () => {
     },
   ];
 
-  // Get the right data based on active tab
-  const displayedUsers = activeTab === "active" ? users : inactiveUsers;
+  // Get the right data based on active tab and ensure it's an array
+  const displayedUsers = activeTab === "active" ? 
+    (Array.isArray(users) ? users : []) : 
+    (Array.isArray(inactiveUsers) ? inactiveUsers : []);
 
   return (
     <div className="space-y-6">
@@ -308,7 +344,7 @@ const UserManagement = () => {
                 <div className="space-y-2">
                   <FormLabel>Role</FormLabel>
                   <Input
-                    value={editUser.role}
+                    value={editUser.role || 'user'}
                     disabled
                   />
                 </div>

@@ -30,7 +30,11 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       // Unauthorized - clear local storage and redirect to login
       clearLocalStorage();
-      window.location.href = '/login';
+      // Only redirect if not already on login or signup page
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/login' && currentPath !== '/signup') {
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }
@@ -69,10 +73,7 @@ const register = async (userData) => {
     },
   });
   
-  if (response.data && response.data.access_token) {
-    saveUserData(response.data.user, response.data.access_token);
-  }
-  
+  // Don't save user data on registration - require explicit login
   return response.data;
 };
 

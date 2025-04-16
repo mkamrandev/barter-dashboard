@@ -3,14 +3,24 @@ import api from './apiService';
 
 // Get all users
 const getAllUsers = async () => {
-  const response = await api.get('/show-users');
-  return response.data;
+  try {
+    const response = await api.get('/show-users');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    throw error;
+  }
 };
 
 // Get inactive users
 const getInactiveUsers = async () => {
-  const response = await api.get('/inactive-users');
-  return response.data;
+  try {
+    const response = await api.get('/inactive-users');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching inactive users:', error);
+    throw error;
+  }
 };
 
 // Get specific user
@@ -30,7 +40,7 @@ const updateUser = async (userData: { id: string; [key: string]: any }) => {
   Object.keys(data).forEach((key) => {
     if (key === 'profile_picture' && data[key] instanceof File) {
       formData.append(key, data[key]);
-    } else {
+    } else if (data[key] !== null && data[key] !== undefined) {
       formData.append(key, data[key]);
     }
   });

@@ -3,39 +3,64 @@ import api from './apiService';
 
 // Create subadmin
 const createSubadmin = async (subadminData: any) => {
-  // Handle FormData for file upload
-  const formData = new FormData();
-  
-  Object.keys(subadminData).forEach((key) => {
-    if (key === 'profile_picture' && subadminData[key] instanceof File) {
-      formData.append(key, subadminData[key]);
-    } else if (key === 'password') {
-      formData.append('password', subadminData[key]);
-      formData.append('confirm_password', subadminData.confirmPassword || subadminData[key]);
-    } else if (key !== 'confirmPassword') {
-      formData.append(key, subadminData[key]);
-    }
-  });
+  try {
+    // Handle FormData for file upload
+    const formData = new FormData();
+    
+    Object.keys(subadminData).forEach((key) => {
+      if (key === 'profile_picture' && subadminData[key] instanceof File) {
+        formData.append(key, subadminData[key]);
+      } else if (key === 'password') {
+        formData.append('password', subadminData[key]);
+        formData.append('confirm_password', subadminData.confirmPassword || subadminData[key]);
+      } else if (key !== 'confirmPassword') {
+        formData.append(key, subadminData[key]);
+      }
+    });
 
-  const response = await api.post('/create/subAdmin', formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  
-  return response.data;
+    // Add first_name and last_name if provided in camelCase
+    if (subadminData.firstName && !formData.has('first_name')) {
+      formData.append('first_name', subadminData.firstName);
+    }
+    if (subadminData.lastName && !formData.has('last_name')) {
+      formData.append('last_name', subadminData.lastName);
+    }
+
+    console.log('Sending subadmin data:', Object.fromEntries(formData.entries()));
+
+    const response = await api.post('/create/subAdmin', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error creating subadmin:', error);
+    throw error;
+  }
 };
 
 // Get all subadmins
 const getAllSubadmins = async () => {
-  const response = await api.get('/show-subAdmins');
-  return response.data;
+  try {
+    const response = await api.get('/show-subAdmins');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching subadmins:', error);
+    throw error;
+  }
 };
 
 // Get inactive subadmins
 const getInactiveSubadmins = async () => {
-  const response = await api.get('/inactive-subAdmin');
-  return response.data;
+  try {
+    const response = await api.get('/inactive-subAdmin');
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching inactive subadmins:', error);
+    throw error;
+  }
 };
 
 // Delete subadmin (soft delete)
