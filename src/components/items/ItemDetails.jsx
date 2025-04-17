@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Dialog,
@@ -10,7 +9,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Item } from '@/redux/slices/itemSlice';
 import { Edit, CheckCircle, XCircle, MapPin, DollarSign, CalendarClock, User } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import {
@@ -22,17 +20,7 @@ import {
 } from "@/components/ui/carousel";
 import { Separator } from '@/components/ui/separator';
 
-interface ItemDetailsProps {
-  item: Item;
-  isOpen: boolean;
-  onClose: () => void;
-  onEdit?: (item: Item) => void;
-  showAdminActions?: boolean;
-  onApprove?: () => void;
-  onReject?: () => void;
-}
-
-const ItemDetails: React.FC<ItemDetailsProps> = ({
+const ItemDetails = ({
   item,
   isOpen,
   onClose,
@@ -42,7 +30,7 @@ const ItemDetails: React.FC<ItemDetailsProps> = ({
   onReject,
 }) => {
   // Helper function to get status badge
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status) => {
     switch (status.toLowerCase()) {
       case 'available':
         return <Badge className="bg-green-500">Available</Badge>;
@@ -58,7 +46,7 @@ const ItemDetails: React.FC<ItemDetailsProps> = ({
   };
 
   // Helper function to get approval badge
-  const getApprovalBadge = (isApproved: boolean | undefined) => {
+  const getApprovalBadge = (isApproved) => {
     if (isApproved === undefined) return <Badge className="bg-amber-500">Pending Approval</Badge>;
     return isApproved ? 
       <Badge className="bg-green-500">Approved</Badge> : 

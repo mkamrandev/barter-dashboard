@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getItems, reset as resetItems, filterUserItems } from "@/redux/slices/itemSlice";
 import { getCategories, reset as resetCategories } from "@/redux/slices/categorySlice";
+import { getItemById } from "@/redux/slices/itemSlice";
 import ItemList from "@/components/items/ItemList";
 import ItemForm from "@/components/items/ItemForm";
 import { updateItem, createItem, deleteItem } from "@/redux/slices/itemSlice";
@@ -20,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 const MyItems = () => {
   const dispatch = useDispatch();
   const { userItems, isLoading, items } = useSelector((state) => state.items);
+  console.log(userItems)
   const { user } = useSelector((state) => state.auth);
   
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -28,6 +30,8 @@ const MyItems = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [availableItems, setAvailableItems] = useState([]);
   const [pendingItems, setPendingItems] = useState([]);
+
+  console.log("currentedit",currentItem)
   
   // Load items and categories once on component mount
   useEffect(() => {
@@ -42,10 +46,10 @@ const MyItems = () => {
   
   // Filter user's items when user or items change
   useEffect(() => {
-    if (user) {
+    if (user && items.length > 0) {
       dispatch(filterUserItems(user.id));
     }
-  }, [dispatch, user]); // Removed the items dependency to prevent potential issues
+  }, [dispatch, user, items]); // Removed the items dependency to prevent potential issues
   
   // Update filtered items when userItems change
   useEffect(() => {
@@ -64,12 +68,17 @@ const MyItems = () => {
     setIsFormOpen(true);
   };
   
-  const handleEdit = (item) => {
-    setCurrentItem(item);
-    setFormMode("edit");
-    setIsFormOpen(true);
+  const handleEdit = async (item) => {
+    try {
+      const response = await dispatch(getItemById(item.id)).unwrap();
+      setCurrentItem(response.data || response); // fallback in case .data is not available
+      setFormMode("edit");
+      setIsFormOpen(true);
+    } catch (error) {
+      toast.error("Failed to fetch item details.");
+    }
   };
-  
+
   const handleDelete = async (item) => {
     try {
       await dispatch(deleteItem(item.id)).unwrap();

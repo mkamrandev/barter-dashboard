@@ -5,6 +5,7 @@ import api from './apiService';
 const getAllUsers = async () => {
   try {
     const response = await api.get('/show-users');
+    console.log(response.data)
     return response.data;
   } catch (error) {
     console.error('Error fetching users:', error);

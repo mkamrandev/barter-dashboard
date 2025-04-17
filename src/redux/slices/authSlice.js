@@ -38,8 +38,8 @@ export const logout = createAsyncThunk(
   'auth/logout',
   async (_, thunkAPI) => {
     try {
-      await authService.logout();
-      authService.clearLocalStorage();
+      authService.clearLocalStorage(); 
+      await authService.logout();      
     } catch (error) {
       return thunkAPI.rejectWithValue(error.response?.data?.message || 'Logout failed');
     }

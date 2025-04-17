@@ -66,7 +66,9 @@ export const getItemById = createAsyncThunk(
   'items/getById',
   async (id: string, thunkAPI) => {
     try {
-      return await itemService.getItem(id);
+      const response = await itemService.getItem(id);
+      console.log('itembyid', response)
+      return response;
     } catch (error: any) {
       const message = error.response?.data?.message || error.message || 'Failed to fetch item';
       toast.error(message);
@@ -154,6 +156,7 @@ export const itemSlice = createSlice({
     },
     filterUserItems: (state, action) => {
       const userId = action.payload;
+      console.log("Items in State: ", state.items); // Debug
       if (Array.isArray(state.items)) {
         state.userItems = state.items.filter(item => item.user_id === userId);
       } else {
@@ -171,11 +174,7 @@ export const itemSlice = createSlice({
         state.isLoading = false;
         state.isSuccess = true;
         // Ensure we're setting an array to state.items
-        state.items = Array.isArray(action.payload.data) 
-          ? action.payload.data 
-          : Array.isArray(action.payload) 
-            ? action.payload 
-            : [];
+        state.items = action.payload.items || []; 
       })
       .addCase(getItems.rejected, (state, action) => {
         state.isLoading = false;

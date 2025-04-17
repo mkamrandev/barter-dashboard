@@ -27,9 +27,9 @@ const Header = ({ toggleSidebar, sidebarOpen, userRole }) => {
   const { user } = useSelector(state => state.auth);
   const [unreadNotifications, setUnreadNotifications] = useState(3);
 
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate("/login");
+  const handleLogout = async () => {
+    await dispatch(logout()); // Wait until Redux logout completes
+    navigate("/login");       // Then navigate
   };
 
   // Get user details from Redux store

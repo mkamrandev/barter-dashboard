@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, UserCog, ShoppingBag, BarChart3, Users2 } from "lucide-react";
 import { usersData, subadminsData } from "../../data/mockData";
+import ItemCard from "../../components/items/ItemCard";
 
 const AdminDashboard = () => {
   return (

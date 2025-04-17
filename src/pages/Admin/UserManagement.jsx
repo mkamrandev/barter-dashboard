@@ -49,6 +49,7 @@ const UserManagement = () => {
   const [activeTab, setActiveTab] = useState("active");
 
   const { users, inactiveUsers, isLoading } = useSelector((state) => state.users);
+  console.log("users", users)
 
   const form = useForm({
     defaultValues: {
@@ -218,9 +219,11 @@ const UserManagement = () => {
   ];
 
   // Get the right data based on active tab and ensure it's an array
-  const displayedUsers = activeTab === "active" ? 
-    (Array.isArray(users) ? users : []) : 
-    (Array.isArray(inactiveUsers) ? inactiveUsers : []);
+  // const displayedUsers = activeTab === "active" ? 
+  //   (Array.isArray(users) ? users : []) : 
+  //   (Array.isArray(inactiveUsers) ? inactiveUsers : []);
+
+    console.log("dis", users)
 
   return (
     <div className="space-y-6">
@@ -269,40 +272,41 @@ const UserManagement = () => {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center items-center h-64">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : (
-        <div>
-          {viewMode === "grid" ? (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {displayedUsers && displayedUsers.length > 0 ? (
-                displayedUsers.map((user) => (
-                  <UserCard
-                    key={user.id}
-                    user={user}
-                    onEdit={handleEdit}
-                    onDelete={handleDelete}
-                    onActivate={handleActivate}
-                    onDeactivate={handleDeactivate}
-                    isPermanentDelete={activeTab === "inactive"}
-                  />
-                ))
-              ) : (
-                <div className="col-span-full text-center py-8">
-                  <p className="text-gray-500">No users found.</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="p-6">
-                <DataTable columns={columns} data={displayedUsers || []} />
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
+  <div className="flex justify-center items-center h-64">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+) : (
+  <div>
+    {viewMode === "grid" ? (
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {users && users?.users?.length > 0 ? (
+          users?.users.map((user) => (
+            <UserCard
+              key={user.id}
+              user={user}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+              onActivate={handleActivate}
+              onDeactivate={handleDeactivate}
+              isPermanentDelete={activeTab === "inactive"}
+            />
+          ))
+        ) : (
+          <div className="col-span-full text-center py-8">
+            <p className="text-gray-500">No users found.</p>
+          </div>
+        )}
+      </div>
+    ) : (
+      <Card>
+        <CardContent className="p-6">
+          <DataTable columns={columns} data={users?.users || []} />
+        </CardContent>
+      </Card>
+    )}
+  </div>
+)}
+
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-md">

@@ -4,39 +4,38 @@ import api from './apiService';
 // Get all items
 const getAllItems = async () => {
   const response = await api.get('/items');
+  console.log("API Response: ", response.data); 
   return response.data;
 };
 
 // Get a specific item
 const getItem = async (id: string) => {
   const response = await api.get(`/items/${id}`);
+  console.log("backend api",response.data)
   return response.data;
 };
 
 // Create a new item
 const createItem = async (itemData: any) => {
   const formData = new FormData();
-  
-  // Handle regular fields
   Object.keys(itemData).forEach((key) => {
-    if (key !== 'images') {
+    if (key !== "images") {
       formData.append(key, itemData[key]);
     }
   });
-  
-  // Handle images as an array
+
   if (itemData.images && itemData.images.length > 0) {
     for (let i = 0; i < itemData.images.length; i++) {
-      formData.append('images[]', itemData.images[i]);
+      formData.append("images[]", itemData.images[i]);
     }
   }
 
-  const response = await api.post('/items', formData, {
+  const response = await api.post("/items", formData, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      "Content-Type": "multipart/form-data",
     },
   });
-  
+
   return response.data;
 };
 

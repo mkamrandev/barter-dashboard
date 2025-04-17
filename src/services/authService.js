@@ -90,9 +90,7 @@ const login = async (userData) => {
 // Logout user
 const logout = async () => {
   try {
-    // Clear local storage first to prevent flashing of dashboard
-    clearLocalStorage();
-    // Then make the API call - using the correct endpoint
+    // clearLocalStorage();
     const response = await axios.get('http://127.0.0.1:8000/api/logout', {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('access_token')}`

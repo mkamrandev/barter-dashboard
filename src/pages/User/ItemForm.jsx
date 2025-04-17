@@ -1,42 +1,64 @@
-
-import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useEffect, useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Upload, X, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { getCategories } from "../../redux/slices/categorySlice";
+import { useDispatch, useSelector } from "react-redux";
+import { createItem } from "../../redux/slices/itemSlice";
 
 const ItemForm = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [itemData, setItemData] = useState({
-    name: "",
-    category: "",
-    condition: "",
+    title: "",
+    category_id: "",
     description: "",
-    exchangeFor: "",
+    location: "",
+    price_estimate: "",
+    status: "pending", // or whatever default you want
     images: [],
   });
+  const dispatch = useDispatch();
+  const { categories } = useSelector((state) => state.categories);
+  console.log(categories);
 
-  const categories = [
-    "Electronics",
-    "Furniture",
-    "Clothing",
-    "Books",
-    "Sports",
-    "Art",
-    "Collectibles",
-    "Gadgets",
-    "Home",
-    "Other",
-  ];
+  // const categories = [
+  //   "Electronics",
+  //   "Furniture",
+  //   "Clothing",
+  //   "Books",
+  //   "Sports",
+  //   "Art",
+  //   "Collectibles",
+  //   "Gadgets",
+  //   "Home",
+  //   "Other",
+  // ];
 
   const conditions = ["New", "Like New", "Good", "Fair", "Poor"];
+
+  useEffect(() => {
+    dispatch(getCategories());
+  }, [dispatch]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -49,7 +71,7 @@ const ItemForm = () => {
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
-    
+
     // Create preview URLs for the selected images
     const newImages = files.map((file) => ({
       file,
@@ -69,25 +91,47 @@ const ItemForm = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
-    // Mock form submission
-    setTimeout(() => {
-      setLoading(false);
+
+    const formImages = itemData.images.map((img) => img.file);
+
+    try {
+      const formPayload = {
+        title: itemData.title,
+        category_id: itemData.category_id, // must be numeric ID
+        description: itemData.description,
+        location: itemData.location,
+        price_estimate: itemData.price_estimate,
+        status: itemData.status,
+        images: itemData.images.map((img) => img.file),
+      };
+      await dispatch(createItem(formPayload)).unwrap();
+
       toast({
         title: "Item Added Successfully",
         description: "Your item has been submitted for barter.",
       });
+
       navigate("/user/dashboard");
-    }, 1500);
+    } catch (err) {
+      toast({
+        // variant: "destructive",
+        // title: "Failed to create item",
+        // description: err?.message || "Something went wrong",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="max-w-3xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Add Item for Barter</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Add Item for Barter
+        </h1>
         <p className="text-gray-500">
           Fill in the details about the item you want to barter.
         </p>
@@ -108,8 +152,8 @@ const ItemForm = () => {
                 <Label htmlFor="name">Item Name</Label>
                 <Input
                   id="name"
-                  name="name"
-                  value={itemData.name}
+                  name="title" // ✅ FIXED
+                  value={itemData.title}
                   onChange={handleChange}
                   placeholder="Vintage Camera"
                   required
@@ -120,9 +164,9 @@ const ItemForm = () => {
                 <div className="space-y-2">
                   <Label htmlFor="category">Category</Label>
                   <Select
-                    value={itemData.category}
-                    onValueChange={(value) =>
-                      handleSelectChange("category", value)
+                    value={itemData.category_id} // ✅ Use category_id directly
+                    onValueChange={
+                      (value) => handleSelectChange("category_id", value) // ✅ Save ID not name
                     }
                     required
                   >
@@ -130,11 +174,24 @@ const ItemForm = () => {
                       <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category} value={category.toLowerCase()}>
-                          {category}
-                        </SelectItem>
-                      ))}
+                      {categories?.categories?.length > 0 ? (
+                        categories?.categories?.map((category) => (
+                          <SelectItem
+                            key={category.id}
+                            value={category.id.toString()} // ✅ Must be string for SelectItem
+                          >
+                            {category.name}
+                          </SelectItem>
+                        ))
+                      ) : loading ? (
+                        <div className="p-2 text-sm text-gray-500">
+                          Loading...
+                        </div>
+                      ) : (
+                        <div className="p-2 text-sm text-gray-500">
+                          No categories available
+                        </div>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -153,7 +210,10 @@ const ItemForm = () => {
                     </SelectTrigger>
                     <SelectContent>
                       {conditions.map((condition) => (
-                        <SelectItem key={condition} value={condition.toLowerCase()}>
+                        <SelectItem
+                          key={condition}
+                          value={condition.toLowerCase()}
+                        >
                           {condition}
                         </SelectItem>
                       ))}
@@ -174,7 +234,8 @@ const ItemForm = () => {
                   required
                 />
                 <p className="text-xs text-gray-500">
-                  Include the brand, model, age, any defects, and special features.
+                  Include the brand, model, age, any defects, and special
+                  features.
                 </p>
               </div>
 
@@ -190,8 +251,52 @@ const ItemForm = () => {
                   required
                 />
                 <p className="text-xs text-gray-500">
-                  Specify items or categories you're interested in bartering for.
+                  Specify items or categories you're interested in bartering
+                  for.
                 </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  name="location"
+                  value={itemData.location}
+                  onChange={handleChange}
+                  placeholder="e.g., Karachi"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="price_estimate">Price Estimate</Label>
+                <Input
+                  id="price_estimate"
+                  name="price_estimate"
+                  type="number"
+                  value={itemData.price_estimate}
+                  onChange={handleChange}
+                  placeholder="e.g., 2000"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={itemData.status}
+                  onValueChange={(value) => handleSelectChange("status", value)}
+                  required
+                >
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="available">Available</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="unavailable">Unavailable</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">

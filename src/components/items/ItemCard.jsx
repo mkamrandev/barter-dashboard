@@ -1,23 +1,11 @@
-
 import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Edit, Trash2, Eye, CheckCircle, XCircle } from 'lucide-react';
-import { Item } from '@/redux/slices/itemSlice';
 import { formatDistanceToNow } from 'date-fns';
 
-interface ItemCardProps {
-  item: Item;
-  onView: (item: Item) => void;
-  onEdit?: (item: Item) => void;
-  onDelete?: (id: string) => void;
-  onApprove?: (id: string) => void;
-  onReject?: (id: string) => void;
-  showAdminActions?: boolean;
-}
-
-const ItemCard: React.FC<ItemCardProps> = ({
+const ItemCard = ({
   item,
   onView,
   onEdit,
@@ -26,8 +14,17 @@ const ItemCard: React.FC<ItemCardProps> = ({
   onReject,
   showAdminActions = false,
 }) => {
+  let images = [];
+  if (item.images) {
+    try {
+      images = JSON.parse(item.images); 
+    } catch (e) {
+      console.error('Error parsing images:', e);
+    }
+  }
+
   // Helper function to get status badge color
-  const getStatusBadge = (status: string) => {
+  const getStatusBadge = (status) => {
     switch (status.toLowerCase()) {
       case 'available':
         return <Badge className="bg-green-500">Available</Badge>;
@@ -43,7 +40,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
   };
 
   // Helper function to get approval badge
-  const getApprovalBadge = (isApproved: boolean | undefined) => {
+  const getApprovalBadge = (isApproved) => {
     if (isApproved === undefined) return null;
     return isApproved ? 
       <Badge className="bg-green-500">Approved</Badge> : 
@@ -69,9 +66,9 @@ const ItemCard: React.FC<ItemCardProps> = ({
       
       <CardContent className="p-4 pt-2 pb-2 flex-grow">
         <div className="aspect-[4/3] w-full mb-3 bg-gray-100 rounded-md overflow-hidden">
-          {item.images && item.images.length > 0 ? (
+          {images.length > 0 ? (
             <img 
-              src={item.images[0]} 
+              src={images[0]} 
               alt={item.title} 
               className="w-full h-full object-cover"
             />

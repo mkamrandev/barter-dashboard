@@ -1,11 +1,5 @@
-
 import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import { RootState } from '@/redux/store';
-import { Item } from '@/redux/slices/itemSlice';
-import ItemCard from './ItemCard';
-import ItemDetails from './ItemDetails';
-import ConfirmationDialog from '@/components/ui/confirmation-dialog';
 import { Button } from '@/components/ui/button';
 import { Plus, Filter } from 'lucide-react';
 import {
@@ -17,23 +11,14 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import ConfirmationDialog from '@/components/ui/confirmation-dialog';
+import ItemCard from './ItemCard';
+import ItemDetails from './ItemDetails';
 
-interface ItemListProps {
-  items?: Item[];
-  isAdmin?: boolean;
-  onAddNew?: () => void;
-  onEdit?: (item: Item) => void;
-  onDelete?: (id: string) => void;
-  onApprove?: (id: string) => void;
-  onReject?: (id: string) => void;
-  userOnly?: boolean;
-  showStatus?: boolean;
-}
-
-const ItemList: React.FC<ItemListProps> = ({ 
-  items = [], 
-  isAdmin = false, 
-  onAddNew, 
+const ItemList = ({
+  items = [],
+  isAdmin = false,
+  onAddNew,
   onEdit,
   onDelete,
   onApprove,
@@ -41,62 +26,41 @@ const ItemList: React.FC<ItemListProps> = ({
   userOnly = false,
   showStatus = false
 }) => {
-  const { user } = useSelector((state: RootState) => state.auth);
-  const categoriesState = useSelector((state: RootState) => state.categories);
-  // Ensure categories is always an array
+  const { user } = useSelector((state) => state.auth);
+  const categoriesState = useSelector((state) => state.categories);
   const categories = Array.isArray(categoriesState.categories) ? categoriesState.categories : [];
-  
-  const [selectedItem, setSelectedItem] = useState<Item | null>(null);
+
+  const [selectedItem, setSelectedItem] = useState(null);
   const [showDetails, setShowDetails] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<string | null>(null);
-  
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [approvalFilter, setApprovalFilter] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  
-  // Make sure items is always an array before filtering
+  const [itemToDelete, setItemToDelete] = useState(null);
+
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [approvalFilter, setApprovalFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
   const itemsArray = Array.isArray(items) ? items : [];
-  
+
   const filteredItems = itemsArray.filter((item) => {
-    // Filter by user if userOnly is true
-    if (userOnly && user && item.user_id !== user.id) {
-      return false;
-    }
-    
-    // Filter by category
-    if (categoryFilter !== 'all' && item.category_id !== categoryFilter) {
-      return false;
-    }
-    
-    // Filter by status
-    if (statusFilter !== 'all' && item.status !== statusFilter) {
-      return false;
-    }
-    
-    // Filter by approval status
-    if (approvalFilter === 'approved' && item.is_approved !== true) {
-      return false;
-    } else if (approvalFilter === 'rejected' && item.is_approved !== false) {
-      return false;
-    } else if (approvalFilter === 'pending' && item.is_approved !== undefined) {
-      return false;
-    }
-    
-    // Filter by search query
-    if (searchQuery && item.title && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) {
-      return false;
-    }
-    
+    if (userOnly && user && item.user_id !== user.id) return false;
+    if (categoryFilter !== 'all' && item.category_id !== categoryFilter) return false;
+    if (statusFilter !== 'all' && item.status !== statusFilter) return false;
+
+    if (approvalFilter === 'approved' && item.is_approved !== true) return false;
+    if (approvalFilter === 'rejected' && item.is_approved !== false) return false;
+    if (approvalFilter === 'pending' && item.is_approved !== undefined) return false;
+
+    if (searchQuery && item.title && !item.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+
     return true;
   });
-  
-  const handleDeleteClick = (id: string) => {
+
+  const handleDeleteClick = (id) => {
     setItemToDelete(id);
     setDeleteDialogOpen(true);
   };
-  
+
   const confirmDelete = () => {
     if (itemToDelete && onDelete) {
       onDelete(itemToDelete);
@@ -104,17 +68,17 @@ const ItemList: React.FC<ItemListProps> = ({
       setItemToDelete(null);
     }
   };
-  
-  const handleView = (item: Item) => {
+
+  const handleView = (item) => {
     setSelectedItem(item);
     setShowDetails(true);
   };
-  
+
   const handleClose = () => {
     setShowDetails(false);
     setSelectedItem(null);
   };
-  
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -126,17 +90,14 @@ const ItemList: React.FC<ItemListProps> = ({
             className="max-w-sm"
           />
         </div>
-        
+
         <div className="flex flex-wrap gap-2">
           <div className="flex items-center">
             <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
             <span className="text-sm mr-2">Filters:</span>
           </div>
-          
-          <Select 
-            value={categoryFilter} 
-            onValueChange={setCategoryFilter}
-          >
+
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
@@ -149,11 +110,8 @@ const ItemList: React.FC<ItemListProps> = ({
               ))}
             </SelectContent>
           </Select>
-          
-          <Select 
-            value={statusFilter} 
-            onValueChange={setStatusFilter}
-          >
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[130px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -165,12 +123,9 @@ const ItemList: React.FC<ItemListProps> = ({
               <SelectItem value="unavailable">Unavailable</SelectItem>
             </SelectContent>
           </Select>
-          
+
           {isAdmin && (
-            <Select 
-              value={approvalFilter} 
-              onValueChange={setApprovalFilter}
-            >
+            <Select value={approvalFilter} onValueChange={setApprovalFilter}>
               <SelectTrigger className="w-[130px]">
                 <SelectValue placeholder="Approval" />
               </SelectTrigger>
@@ -182,7 +137,7 @@ const ItemList: React.FC<ItemListProps> = ({
               </SelectContent>
             </Select>
           )}
-          
+
           {onAddNew && (
             <Button onClick={onAddNew}>
               <Plus className="h-4 w-4 mr-2" /> Add New
@@ -190,7 +145,7 @@ const ItemList: React.FC<ItemListProps> = ({
           )}
         </div>
       </div>
-      
+
       {filteredItems.length === 0 ? (
         <div className="text-center p-10 border rounded-lg bg-muted/20">
           <p className="text-muted-foreground mb-4">No items found</p>
@@ -207,7 +162,7 @@ const ItemList: React.FC<ItemListProps> = ({
               key={item.id}
               item={item}
               onView={handleView}
-              onEdit={onEdit}
+              onEdit={() => onEdit(item)}
               onDelete={onDelete ? () => handleDeleteClick(item.id) : undefined}
               onApprove={onApprove ? () => onApprove(item.id) : undefined}
               onReject={onReject ? () => onReject(item.id) : undefined}
@@ -216,19 +171,19 @@ const ItemList: React.FC<ItemListProps> = ({
           ))}
         </div>
       )}
-      
+
       {selectedItem && (
         <ItemDetails
           item={selectedItem}
           isOpen={showDetails}
           onClose={handleClose}
-          onEdit={onEdit}
+          onEdit={() => onEdit(selectedItem)}
           showAdminActions={isAdmin}
           onApprove={onApprove ? () => onApprove(selectedItem.id) : undefined}
           onReject={onReject ? () => onReject(selectedItem.id) : undefined}
         />
       )}
-      
+
       <ConfirmationDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}

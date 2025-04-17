@@ -3,8 +3,10 @@ import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getItems, reset as resetItems, approveRejectItem } from "@/redux/slices/itemSlice";
 import { getCategories, reset as resetCategories } from "@/redux/slices/categorySlice";
-import ItemList from "@/components/items/ItemList";
-import ItemForm from "@/components/items/ItemForm";
+// import ItemList from "@/components/items/ItemList";
+// import ItemForm from "@/components/items/ItemForm";
+import ItemList from "../../components/items/ItemList"
+import ItemForm from "../../components/items/ItemForm"
 import { updateItem, createItem, deleteItem } from "@/redux/slices/itemSlice";
 import {
   Dialog,
